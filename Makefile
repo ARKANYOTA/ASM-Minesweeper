@@ -4,6 +4,9 @@ all: clean asm-compile execute
 asm-compile:
 	nasm -felf64 main.asm && ld main.o
 
+asm-test:
+	nasm -felf64 test.asm && ld test.o
+
 asm-debug: clean asm-compile
 	gdb a.out
 
