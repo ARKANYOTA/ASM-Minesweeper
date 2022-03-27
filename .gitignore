@@ -1,0 +1,13 @@
+# All outputs
+*.o
+*.out
+
+# gcc -save-temps
+main.s
+main.i
+main.o
+
+# Editeur
+.idea/*
+.vscode/*
+
