@@ -58,7 +58,7 @@ generate_bombs:
 	or r8, rbx    ; bombs |= masque
 	pop rcx       ; On reprend rcx en tant que nb_bombs
 
-	cmp rcx, 0      ; Si y a plus de bombes a placer on quitter
+	cmp rcx, 0      ; Si y a plus de bombes a placer on quitte
 	jne generate_bombs
 	mov [bombs], r8
 	ret
@@ -132,39 +132,6 @@ affiche_grid:
 	jne affiche_grid   
 	ret
 
-_start:                ;User prompt
-   
-        mov rax, 0
-        mov rbx, 64        ; Permet de faire un modulo 64
-        mov rdx, 0 
-        mov r8, [bombs]
-        mov rcx, [nb_bombs]
-        call generate_bombs
-        
-        
-        ; mov r, [bombs]
-        ; call v2_print_bin                ; Affiche le nombre 103 en binaire
-        
-        mov rax, 4
-        mov rbx, 1
-        mov rcx, whatCollIs
-        mov rdx, lenwhatCollIs
-        int 80h
-        
-        
-        mov rax, 0
-        mov rbx, 0
-        mov rdx, 0
-        mov rcx, 64
-        mov r8, [bombs]
-        mov r9, [flag]
-        mov r10, [disco]
-        mov r14, 48     ; Line on commance par 48 pour directement avoir le code ascii
-        call affiche_grid
-        mov r14, 0
-
-
-
 
 	
 ; mov eax, 3
@@ -172,7 +139,6 @@ _start:                ;User prompt
 ; mov ecx, num
 ; mov edx, 5          ;5 bytes (numeric, 1 for sign) of that information
 ; int 80h
-
 
 user_input:
     mov eax, 3
