@@ -22,6 +22,9 @@ section .data                           ;Data segment
     numberToPrint DQ 0
 
 section .bss           ;Uninitialized data
+    cos resd 1
+    x resb 1
+    y resb 1
 section .text          ;Code Segment
 	global _start
 generate_bombs:
@@ -130,8 +133,49 @@ affiche_grid:
     jne affiche_grid   
     ret
 
+user_input:
+    mov eax, 3
+    mov ebx, 2,
+    mov edx, 4
+    mov ecx, cos
+    int 80h
+
+    mov rdx, 0
+    mov bx, 0b100000000
+    mov eax, [cos]
+    div bx ; division pour la co x
+    
+    sub rdx, 48
+    mov [x], rdx ; Move de la coo X
+    mov rdx, 0
+
+    div bx ; redivision pour la co y
+
+    sub rdx, 48
+    mov [y], rdx  ; move de la co y
+
+    mov eax, 0
+    mov [cos], eax
+
+    mov bx, 8
+    mov al, [y] ; On multiplie y par 8 pour avoir la ligne 
+    mul bx
+
+    add al, [x]
+    mov [cos], al ; On ajoute la colonne 
+
+    xor al,al ; reset al
+    xor rbx,rbx
+    xor rcx,rcx
+    
+    ret
+
+    
+
 _start:                ;User prompt
     
+    call user_input
+
     mov rax, 0
     mov rbx, 64        ; Permet de faire un modulo 64
     mov rdx, 0 
