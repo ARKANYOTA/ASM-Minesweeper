@@ -27,36 +27,41 @@ section .bss           ;Uninitialized data
 section .text          ;Code Segment
 	global _start
 generate_bombs:
-	dec rcx
+	
 	; rax = RANDOM 
 	L: rdrand ax    ; Générer un nombre aléatoire dans la variable eax 
 	jnc L           ; https://rosettacode.org/wiki/Random_number_generator_(device)#X86_Assembly
 
 	; rax = rax%64 
-	mov rdx, 0      ; Reset la variale
+	xor rdx, rdx     ; Reset la variale
 	mov rbx, 64     ; modulo 64 le nombre
 	div rbx         ; 
 	mov rax, rdx    ; Met le modulo dans la variable rax
 
-	mov rdx, 0      ; Reset rdx pour la prochaine utilisation
-	mov rbx, 0
+	xor rdx, rdx    ; Reset rdx pour la prochaine utilisation
+	xor rbx, rbx
 
 	; Condition de si la bombe est deja placée
-	; push rcx
-	; mov rcx, rax
-	; 
-	; mov rbx, r8
-	; shr rbx, cl 
-	; and rbx, 1
-	; pop rcx
-	; cmp rbx, 1
-	; je generate_bombs
+	push rcx
+	mov rcx, rax
+	
+	mov rbx, r8
+	shr rbx, cl 
+	and rbx, 1
+	pop rcx
+	cmp rbx, 1
+	je generate_bombs
+
+
 	mov rbx, 1     ; Masque
-	push rcx      ; Sauvgarde rcx(Compteur nb_bombes)
-	mov rcx, rax    ; masque = (1 << rax(position random de la bombe))
-	shl rbx, cl     ; ↑
+	push rcx      ; Sauvgarde rcx(Compteur nb_bombes)    
+
+	mov rcx, rax
+	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
 	or r8, rbx    ; bombs |= masque
+
 	pop rcx       ; On reprend rcx en tant que nb_bombs
+	dec rcx
 
 	cmp rcx, 0      ; Si y a plus de bombes a placer on quitte
 	jne generate_bombs
