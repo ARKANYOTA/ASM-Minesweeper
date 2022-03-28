@@ -2,9 +2,9 @@ section .data          ; Data segment
 	posMsg            db 'Position x et y sans separation: '
 	lenposxMsg           equ $-posMsg
 
-	youWinMessage     db 'You Win, Bravo!'
-	youLoseMessage    db 'You Lose, Ressaye!'
+	youWinMessage     db 10,' You Win, Bravo!'
 	lenyouWinMessage     equ $-youWinMessage
+	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
 	nb_bombs          DQ 14
@@ -228,20 +228,7 @@ user_input:
     ret
 
     
-
-_start:                ;User prompt
-    
-    call user_input
-
-    mov rax, 0         ; Generere les bombes En fonction de l'input utilisateur (TODO)
-    mov rbx, 64        ; Permet de faire un modulo 64
-    mov rdx, 0 
-    mov r8, [bombs]
-    mov rcx, [nb_bombs]
-    call generate_bombs
-
-
-; while_true:
+print_grid:
     mov rax, 4
     mov rbx, 1
     mov rcx, whatCollIs
@@ -258,18 +245,92 @@ _start:                ;User prompt
     mov r14, 48     ; Line
     call affiche_grid
     mov r14, 0
-
-
-    mov r8, [bombs]
-    mov r9, [flag]
-    mov r10, [disco]
-   
-    xor rax, rax
-    xor rcx, rcx
-
+    ret
     
+
+is_game_finished:
+    ; Vérifie si on a gagnée
+    mov r8, [bombs]
+    mov r10, [disco]
+    not r8
+    cmp r8, r10
+    jne verif_lose_condition
+        mov rax, 4
+        mov rbx, 1
+        mov rcx, youWinMessage
+        mov rdx, lenyouWinMessage
+        int 80h
+         
+        call quit_program
+    verif_lose_condition:
+        ; Vérifie si on a perdu
+        mov r8, [bombs]
+        mov r10, [disco]
+        and r8, r10        ; On AND les 2 int, si a un endroit il y a bombs et discovered alors la nouvelle valeur sera plus grande que 0
+        cmp r8, 0
+        je continue_game
+            mov rax, 4
+            mov rbx, 1
+            mov rcx, youLoseMessage
+            mov rdx, lenyouLoseMessage
+            int 80h
+             
+            call quit_program
+    continue_game:
+    ret
+
+
+quit_program:
+    ; Saut de ligne pour éviter le %
+    mov rax, 4
+    mov rbx, 1
+    mov rcx, sautdelMsg
+    mov rdx, 1
+    int 80h
+
+    ; exit(0)
+    xor ecx, ecx
+    xor edx, edx
+    mov     eax, 0x1              ; Set system_call
+    mov     ebx, 0               ; Exit_code 0
+    int     0x80                  ; Call kernel
+    ret
+
+
+_start:                ;User prompt
+    
+    call user_input
+
+    mov rax, 0         ; Generere les bombes En fonction de l'input utilisateur (TODO)
+    mov rbx, 64        ; Permet de faire un modulo 64
+    mov rdx, 0 
+    mov r8, [bombs]
+    mov rcx, [nb_bombs]
+    call generate_bombs
+
+while_true:
+    call print_grid
+
+
+    call is_game_finished
+   
+    mov rax, 4
+    mov rbx, 1
+    mov rcx, sautdelMsg
+    mov rdx, 1
+    int 80h
+
+    call user_input
+
+    xor rax, rax
+    xor rbx, rbx
+    xor rcx, rcx
+    xor rdx, rdx
+
+
+    mov r10, [disco]
     mov rbx, 1     ; Masque
-    mov rcx, rax
+    mov rcx, [cos]
     shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
     or r10, rbx    ; bombs |= masque
     mov [disco], r10
@@ -280,25 +341,7 @@ _start:                ;User prompt
     mov r10, [disco]
     mov r15, 0               ; Is finished
     
-   ;  not r11                  ; Si ~(disco) == bombs mettre r15 a 1
-   ;  cmp r11, r8
-   ;  je no_add_one_to_r15
-   ;      and r15, 1
-   ;  no_add_one_to_r15:
+    jmp while_true
 
-
-   ;  cmp r15, 0
-   ;  je while_true
-
-    ; Saut de ligne pour éviter le %
-    mov rax, 4
-    mov rbx, 1
-    mov rcx, sautdelMsg
-    mov rdx, 1
-    int 80h
-
-    ; exit(0)
-    mov     eax, 0x1              ; Set system_call
-    mov     ebx, 0               ; Exit_code 0
-    int     0x80                  ; Call kernel
     
+    call quit_program
