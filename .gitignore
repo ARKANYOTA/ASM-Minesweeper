@@ -11,3 +11,6 @@ main.o
 .idea/*
 .vscode/*
 
+peda-session-a.out.txt
+.gdb_history
+
