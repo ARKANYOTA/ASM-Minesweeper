@@ -62,6 +62,9 @@ generate_bombs:
 	pop rcx
 	cmp rbx, 1
 	je generate_bombs
+    mov rbx, [cos]                    ; Je crois que ca marche pas ouf bien cette merde
+    cmp rax, rbx
+    je generate_bombs
 
 
 	mov rbx, 1     ; Masque
@@ -296,6 +299,15 @@ quit_program:
     int     0x80                  ; Call kernel
     ret
 
+discover:
+    mov r10, [disco]
+    mov rbx, 1     ; Masque
+    mov rcx, [cos]
+    shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
+    or r10, rbx    ; bombs |= masque
+    mov [disco], r10
+    ret
+
 
 _start:                ;User prompt
     
@@ -307,6 +319,7 @@ _start:                ;User prompt
     mov r8, [bombs]
     mov rcx, [nb_bombs]
     call generate_bombs
+    call discover
 
 while_true:
     call print_grid
@@ -328,12 +341,7 @@ while_true:
     xor rdx, rdx
 
 
-    mov r10, [disco]
-    mov rbx, 1     ; Masque
-    mov rcx, [cos]
-    shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
-    or r10, rbx    ; bombs |= masque
-    mov [disco], r10
+    call discover
 
 
     mov r8, [bombs]
