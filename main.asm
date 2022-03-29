@@ -18,12 +18,13 @@ section .data                           ;Data segment
 	sautdelMsg        db "",10
 	espace            db " "
 	whatCollIs        db "  0 1 2 3 4 5 6 7"
-	lenwhatCollIs        equ $-whatCollIs             ;The length of the message
+	lenwhatCollIs        equ $-whatCollIs            ;The length of the message
 
 section .bss           ;Uninitialized data
     cos resd 1
     x resb 1
     y resb 1
+	num resq 4
 
 section .text          ;Code Segment
 	global _start
@@ -136,8 +137,11 @@ affiche_grid:
 	jne affiche_grid   
 	ret
 
-
-
+write_number:
+	ret
+read_number:
+	xor rax, rax
+	mov rax, cos
 user_input:
     mov eax, 3
     mov ebx, 2,
@@ -174,12 +178,11 @@ user_input:
     xor rcx,rcx
     
     ret
-
-    
-
 _start:                ;User prompt
     
-    call user_input
+    ;call user_input
+
+	mov num 0
 
     mov rax, 0
     mov rbx, 64        ; Permet de faire un modulo 64
