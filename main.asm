@@ -310,7 +310,19 @@ discover:
     shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
     or r10, rbx    ; bombs |= masque
     mov [disco], r10
+
+    ; Decouvrir dans la hauteur
+    mov rcx, [cos]
+    discover_up:
+        cmp rcx, 7
+        jge discover_down
+
+    discover_down:
+        
+        
+
     ret
+
 
 
 _start:                ;User prompt
