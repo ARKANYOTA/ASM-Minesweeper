@@ -34,7 +34,12 @@ section .bss           ; Uninitialized data
     cos resd 1
     x resb 1
     y resb 1
-	num resq 4
+	num1 resq 1
+	num2 resq 1
+	num3 resq 1
+	num4 resq 1
+	tmp resb 1
+	value, resb 1
 
 section .text          ; Code Segment
 	global _start
@@ -196,7 +201,30 @@ write_number:
 	ret
 read_number:
 	xor rax, rax
-	mov rax, cos
+	mov rbx, [cos] ; on place les coos à eax
+	mov rax, [num1]
+
+	shr rax, rbx
+	and al, 1
+
+	mov byte [value], al
+
+	mov rax, [num2]
+
+	shr rax, rbx
+	and al, 1
+	mul 2
+	add [value], al
+
+	mov rax, [num3]
+
+	shr rax, rbx
+	and al, 1
+	mul 4
+	add [value], al
+
+	ret
+
 user_input:
     mov eax, 3
     mov ebx, 2,
@@ -316,6 +344,13 @@ discover:
 _start:                ;User prompt
     
     call user_input
+
+	mov qword [num1], 0
+	mov qword [num2], 0
+	mov qword [num3], 0
+	mov qword [num4], 0
+
+	call read_number
 
     mov rax, 0         ; Generere les bombes En fonction de l'input utilisateur (TODO)
     mov rbx, 64        ; Permet de faire un modulo 64
