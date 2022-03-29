@@ -1,3 +1,7 @@
+; mov r, [bombs]
+; call v2_print_bin                ; Affiche le nombre 103 en binaire
+
+
 ; mov eax, 3
 ; mov ebx, 2
 ; mov ecx, num

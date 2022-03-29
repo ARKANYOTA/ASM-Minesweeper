@@ -34,19 +34,19 @@
 section .text
 global _start
 _start:
-    mov byte[rsp-1], 0x35
-    mov eax,1       ;Write system call number
-    mov edi,1       ;file descriptor (1 = stdout)
-    lea rsi,[rsp-1] ;address of message on the stack
-    mov edx,1       ;length of message
-    syscall
+    ; mov byte[rsp-1], 0x35
+    ; mov eax,1       ;Write system call number
+    ; mov edi,1       ;file descriptor (1 = stdout)
+    ; lea rsi,[rsp-1] ;address of message on the stack
+    ; mov edx,1       ;length of message
+    ; syscall
 
-    mov byte[rsp-1], 0x36
-    mov eax,1       ;Write system call number
-    mov edi,1       ;file descriptor (1 = stdout)
-    lea rsi,[rsp-1] ;address of message on the stack
-    mov edx,1       ;length of message
-    syscall
+    ; mov byte[rsp-1], 0x36
+    ; mov eax,1       ;Write system call number
+    ; mov edi,1       ;file descriptor (1 = stdout)
+    ; lea rsi,[rsp-1] ;address of message on the stack
+    ; mov edx,1       ;length of message
+    ; syscall
 
 
     mov eax,60      ;Exit system call
