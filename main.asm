@@ -37,7 +37,6 @@ section .bss           ; Uninitialized data
 	num1 resq 1
 	num2 resq 1
 	num3 resq 1
-	num4 resq 1
 	tmp resb 1
 	value, resb 1
 
@@ -199,24 +198,24 @@ affiche_grid:
 
 write_number:
 	ret
-read_number:
+read_number: ; On store les coos du nombre à lire dans [cos] la valeur est return dans [value]
 	xor rax, rax
-	mov rbx, [cos] ; on place les coos à eax
-	mov rax, [num1]
+	mov rbx, [cos] ; on place les coos à ebx
+	mov rax, [num1] ; on place le premier quadra word dans rax
 
-	shr rax, rbx
-	and al, 1
+	shr rax, rbx ; on le bitdhift des coos
+	and al, 1 ; on recup seulement le premier nombre
 
-	mov byte [value], al
+	mov byte [value], al ; on initialise value à ce nombre
 
-	mov rax, [num2]
+	mov rax, [num2] ; on va refaire pareil avec num2 mais en multipliant par 2 à la fin (système binaire)
 
 	shr rax, rbx
 	and al, 1
 	mul 2
 	add [value], al
 
-	mov rax, [num3]
+	mov rax, [num3] ; on va refaire pareil avec num2 mais en multipliant par 4 à la fin (système binaire)
 
 	shr rax, rbx
 	and al, 1
