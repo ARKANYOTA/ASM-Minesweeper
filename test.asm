@@ -31,6 +31,12 @@
 ;  -------------------
 ;  V2
 ;  ---------------
+hello:
+    mov eax, 4
+    mov ebx, 3
+    mov ecx, 1
+    ret
+
 section .text
 global _start
 _start:
@@ -47,6 +53,7 @@ _start:
     ; lea rsi,[rsp-1] ;address of message on the stack
     ; mov edx,1       ;length of message
     ; syscall
+    call hello
 
 
     mov eax,60      ;Exit system call

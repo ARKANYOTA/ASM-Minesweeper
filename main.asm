@@ -250,8 +250,8 @@ read_number: ; On store les coos du nombre à lire dans [cos] la valeur est retu
 	shr rax, cl
 	and al, 1
 
-	mov cx, 2
-	mul cx
+	mov bx, 2
+	mul bx
 	add [value], al
 
 	mov rax, [num3] ; on va refaire pareil avec num2 mais en multipliant par 4 à la fin (système binaire)
@@ -378,7 +378,19 @@ discover:
     shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
     or r10, rbx    ; bombs |= masque
     mov [disco], r10
+
+    ; Decouvrir dans la hauteur
+    mov rcx, [cos]
+    discover_up:
+        cmp rcx, 7
+        jge discover_down
+
+    discover_down:
+        
+        
+
     ret
+
 
 
 _start:                ;User prompt
