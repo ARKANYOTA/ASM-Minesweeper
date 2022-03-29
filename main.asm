@@ -29,14 +29,14 @@ section .data          ; Data segment
 	isLose            DQ 0x0
 	isWin             DQ 0x0
 	
+	num1 			  dq 0x0
+	num2 			  dq 0x0
+	num3 			  dq 0x0
 
 section .bss           ; Uninitialized data
     cos resd 1
     x resb 1
     y resb 1
-	num1 resq 1
-	num2 resq 1
-	num3 resq 1
 	tmp resb 1
 	value resb 1
 
