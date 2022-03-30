@@ -32,9 +32,10 @@
 ;  V2
 ;  ---------------
 hello:
-    mov eax, 4
-    mov ebx, 3
-    mov ecx, 1
+    mov eax, 0
+    sub eax, 1
+    cmp eax, 0
+    jl hello
     ret
 
 section .text
