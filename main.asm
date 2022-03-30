@@ -20,6 +20,7 @@ section .data          ; Data segment
 	lenwhatCollIs        equ $-whatCollIs
 
 	espace            db " "
+	pointMsg          db "."
 	noBombAndFlagMsg  db "~"
 	justbombMsg       db "#"
 	bombAndFlagMsg    db "x"
@@ -43,50 +44,71 @@ section .bss           ; Uninitialized data
 section .text          ; Code Segment
 	global _start
 
-generate_bombs:
-	;rax = RANDOM 
-	L: rdrand ax        ; Générer un nombre aléatoire dans la variable eax 
-	jnc L               ; https://rosettacode.org/wiki/Random_number_generator_(device)#X86_Assembly
-
-	; rax = rax%64 
-	xor rdx, rdx        ; Reset la variale
-	mov rbx, 64         ; modulo 64 le nombre
-	div rbx
-	mov rax, rdx        ; Met le modulo dans la variable rax
-
-	xor rdx, rdx        ; Reset rdx pour la prochaine utilisation
-	xor rbx, rbx
-
-	; Condition de si la bombe est deja placée
-	push rcx
-	mov rcx, rax
-	
-	mov rbx, r8
-	shr rbx, cl 
-	and rbx, 1
-	pop rcx
-	cmp rbx, 1
-	je generate_bombs
-    mov rbx, [cos]                    ; Je crois que ca marche pas ouf bien cette merde
-    cmp rax, rbx
-    je generate_bombs
+; r8  : bombs
+; r9  : flags
+; r10 : disco
+; r11 : bool, is_inside
+; r12 :
+; r13 :
+; r14 : 
+; r15 : When Print: the current line
 
 
-	mov rbx, 1     ; Masque
-	push rcx      ; Sauvgarde rcx(Compteur nb_bombes)    
 
-	mov rcx, rax
-	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
-	or r8, rbx    ; bombs |= masque
+generate_bomb:
+	mov rax, 0
+	mov rbx, 64        ; Permet de faire un modulo 64
+	mov rdx, 0
+	mov r8, [bombs]
+	mov rcx, [nb_bombs]
+	generate_bombs_loop:
+		;rax = RANDOM
+		; Générer un nombre aléatoire dans la variable eax 
+		L: rdrand ax        
+		; https://rosettacode.org/wiki/Random_number_generator_(device)#X86_Assembly
+		jnc L 
 
-	pop rcx       ; On reprend rcx en tant que nb_bombs
-	dec rcx
+		; rax = rax%64 
+		xor rdx, rdx        ; Reset la variale
+		mov rbx, 64         ; modulo 64 le nombre
+		div rbx
+		mov rax, rdx        ; Met le modulo dans la variable rax
 
-	cmp rcx, 0      ; Si y a plus de bombes a placer on quitte
-	jne generate_bombs
-	mov [bombs], r8
+		xor rdx, rdx        ; Reset rdx et rbx pour la prochaine utilisation
+		xor rbx, rbx
+
+		; Condition de si la bombe est deja placée
+		push rcx             ; Save rcx
+		mov rcx, rax
+		mov rbx, r8
+		shr rbx, cl 
+		and rbx, 1
+		pop rcx
+
+		cmp rbx, 1
+		je generate_bombs_loop
+		mov rbx, [cos]
+		cmp rax, rbx
+		je generate_bombs_loop
+
+
+		mov rbx, 1     ; Masque
+		push rcx      ; Sauvgarde rcx(Compteur nb_bombes)    
+
+		mov rcx, rax
+		shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
+		or r8, rbx    ; bombs |= masque
+		pop rcx       ; On reprend rcx en tant que nb_bombs
+		dec rcx
+
+		cmp rcx, 0      ; Si y a plus de bombes a placer on quitte
+		jne generate_bombs_loop
+		mov [bombs], r8
+        xor rax, rax
+        xor rbx, rbx
+        xor rcx, rcx
+        xor rdx, rdx
 	ret
-
 
 affiche_grid:
 	; Verifie si c'est un modulo 8 pour sauter une ligne
@@ -94,7 +116,6 @@ affiche_grid:
 	mov rax, rcx
 	mov rbx, 8
 	div rbx
-	mov r13, rcx
 	push rcx
 	cmp rdx, 0
 	jne pass_saut_de_ligne
@@ -105,7 +126,7 @@ affiche_grid:
 		int 80h
 
 		; Print The current ligne
-		mov byte[rsp-1], r14b
+		mov byte[rsp-1], r15b
 		mov eax,1       ;Write system call number
 		mov edi,1       ;file descriptor (1 = stdout)
 		lea rsi,[rsp-1] ;address of message on the stack
@@ -119,7 +140,7 @@ affiche_grid:
 		mov rdx, 1
 		int 80h
 
-		inc r14     ; Ajoute 1 au nombre de lignes 
+		inc r15     ; Ajoute 1 au nombre de lignes 
 	pass_saut_de_ligne:
 	pop rcx
 
@@ -178,7 +199,7 @@ affiche_grid:
 	jc print_is_disco
 		mov rax, 4
 		mov rbx, 1
-		mov rcx, espace 
+		mov rcx, pointMsg 
 		mov rdx, 1
 		int 80h
 		jmp end_print_disco
@@ -317,9 +338,9 @@ print_grid:
     mov r8, [bombs]
     mov r9, [flag]
     mov r10, [disco]
-    mov r14, 48     ; Line
+    mov r15, 48     ; Line
     call affiche_grid
-    mov r14, 0
+    mov r15, 0
     ret
     
 
@@ -393,33 +414,68 @@ is_cos_inside:
     is_no_inside:
     ret
 
-discover:    ; rcx, = cos
-    ; mov r10, [disco]
-    ; mov rbx, 1     ; Masque
-    ; ; mov rcx, [cos]   ;  a faire avant
-    ; shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
-    ; or r10, rbx    ; bombs |= masque
-    ; mov [disco], r10
+discover:    ; rcx, = cos  ; rax= y; rdx = x
+    push rax
+    mov rcx, 8
+    mul cl
+    add rax, rdx
+    mov rcx, rax
+    pop rax
 
-    ; ; Decouvrir dans la hauteur
-    ; push rcx
-    ; mov rax, rcx
-    ; call get_x_and_y
-    ; ; rax = y, rdx = x
+    mov r10, [disco]
+    mov rbx, 1     ; Masque
+    ; mov rcx, [cos]   ;  a faire avant
+    shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
+    or r10, rbx    ; bombs |= masque
+    mov [disco], r10
 
-    ; cmp rax, 0
-    ; jl no_discover
-    ; jle discover_down
-    ;     push rcx
+    ;     xor rbx, rbx
+    ;     ; Decouvrir dans la hauteur
     ;     mov rax, rcx
     ;     call get_x_and_y
-    ;     ; rax = y, rdx = x
     ;     
+    ;     disco_u:
+    ;     dec rax
+    ;     call is_cos_inside
+    ;     cmp r11, 255
+    ;         call discover
 
-    ;     call discover
-    ;     pop rcx
-    ; discover_down:
-    ; call no_discover
+    ; disco_ur:
+    ; inc rdx
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; disco_r:
+    ; inc rax
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; disco_dr:
+    ; inc rax
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; disco_d:
+    ; dec rdx
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; disco_dl:
+    ; dec rdx
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; disco_l:
+    ; dec rax
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; disco_ul:
+    ; dec rax
+    ; call is_cos_inside
+    ; cmp r11, 255
+    ;     nop
+    ; 
         
         
 
@@ -428,19 +484,11 @@ discover:    ; rcx, = cos
 _start:                ;User prompt
     
     call user_input
-
 	mov qword [num1], 0
 	mov qword [num2], 0
 	mov qword [num3], 0
-
-	; call read_number
-
-    mov rax, 0         ; Generere les bombes En fonction de l'input utilisateur (TODO)
-    mov rbx, 64        ; Permet de faire un modulo 64
-    mov rdx, 0 
-    mov r8, [bombs]
-    mov rcx, [nb_bombs]
-    call generate_bombs
+    call generate_bomb
+    call get_x_and_y
     call discover
 
 while_true:
@@ -469,7 +517,6 @@ while_true:
     mov r8, [bombs]
     mov r9, [flag]
     mov r10, [disco]
-    mov r15, 0               ; Is finished
     
     jmp while_true
 
