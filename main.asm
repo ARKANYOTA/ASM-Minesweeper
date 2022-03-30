@@ -9,7 +9,7 @@ section .data          ; Data segment
 
 	nb_bombs          DQ 14
 
-	bombs             DQ 0x0
+	bombs             DQ 0x0;0xa09440c820930000
 	flag              DQ 0x0
 	disco             DQ 0x0
 
@@ -335,27 +335,59 @@ quit_program:
     int     0x80                  ; Call kernel
     ret
 
-discover:
-    mov r10, [disco]
-    mov rbx, 1     ; Masque
-    mov rcx, [cos]
-    shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
-    or r10, rbx    ; bombs |= masque
-    mov [disco], r10
+get_x_and_y:
+    ; mov rax, [cos]
+    mov rbx, 8
+    div bl
+    ret ; rax = y, rdx = x
 
-    ; Decouvrir dans la hauteur
-    mov rcx, [cos]
-    discover_up:
-        cmp rcx, 7
-        jge discover_down
+is_cos_inside:
+    ; rax = y, rdx = x
+    cmp rax,0
+    mov r11, 0                       ; La cordonn{es est pas bonne
+    jl is_no_inside
+        cmp rax,7
+        jg is_no_inside
+            cmp rdx,0
+            jl is_no_inside
+                cmp rdx,7
+                jg is_no_inside
+                    mov r11, 255                ; Boolean de si la cordonnée est bonne
+                    ; Is inside
+    is_no_inside:
+    ret
 
-    discover_down:
+discover:    ; rcx, = cos
+    ; mov r10, [disco]
+    ; mov rbx, 1     ; Masque
+    ; ; mov rcx, [cos]   ;  a faire avant
+    ; shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
+    ; or r10, rbx    ; bombs |= masque
+    ; mov [disco], r10
+
+    ; ; Decouvrir dans la hauteur
+    ; push rcx
+    ; mov rax, rcx
+    ; call get_x_and_y
+    ; ; rax = y, rdx = x
+
+    ; cmp rax, 0
+    ; jl no_discover
+    ; jle discover_down
+    ;     push rcx
+    ;     mov rax, rcx
+    ;     call get_x_and_y
+    ;     ; rax = y, rdx = x
+    ;     
+
+    ;     call discover
+    ;     pop rcx
+    ; discover_down:
+    ; call no_discover
         
         
 
     ret
-
-
 
 _start:                ;User prompt
     
@@ -366,7 +398,7 @@ _start:                ;User prompt
 	mov qword [num3], 0
 	mov qword [num4], 0
 
-	call read_number
+	; call read_number
 
     mov rax, 0         ; Generere les bombes En fonction de l'input utilisateur (TODO)
     mov rbx, 64        ; Permet de faire un modulo 64
@@ -395,7 +427,7 @@ while_true:
     xor rcx, rcx
     xor rdx, rdx
 
-
+    mov rcx, [cos]   ; 
     call discover
 
 
