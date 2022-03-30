@@ -85,20 +85,46 @@ generate_bombs:
 	mov [y], rax
 	mov [x], rdx
 
-	dec rax
 	dec rdx
-	add y, 2
-	add x, 2
+	dec rax
+	add byte [y], 2
+	add byte [x], 2
 
-	neighbours:
+	mov byte [tmp], 1
+
+	neighbours1:
+
+
+		jmp neighbours2
 
 		inc rax
+		cmp rax, y
+		jne neighbours1
+
+		ret
+	neighbours2:
+
+		call is_cos_inside
+		cmp r11, 255
+		je neighboursInside
+
+		
 		inc rdx
+		cmp rdx, x
+		jne neighbours2
 
-
-
-
-
+		mov rdx, [x]
+		sub rdx, 3
+		ret
+	neighboursInside:
+		push rax
+		mov bl, 8
+		mul bl
+		add rax, rdx
+		mov [cos], rax
+		call write_number
+		pop rax
+		ret
 	pop rcx       ; On reprend rcx en tant que nb_bombs
 	dec rcx
 
