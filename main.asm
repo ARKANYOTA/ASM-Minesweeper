@@ -79,6 +79,26 @@ generate_bombs:
 	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
 	or r8, rbx    ; bombs |= masque
 
+
+	call get_x_and_y
+
+	mov [y], rax
+	mov [x], rdx
+
+	dec rax
+	dec rdx
+	add y, 2
+	add x, 2
+
+	neighbours:
+
+		inc rax
+		inc rdx
+
+
+
+
+
 	pop rcx       ; On reprend rcx en tant que nb_bombs
 	dec rcx
 
