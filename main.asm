@@ -37,7 +37,6 @@ section .bss           ; Uninitialized data
 	num1 resq 1
 	num2 resq 1
 	num3 resq 1
-	num4 resq 1
 	tmp resb 1
 	value resb 1
 
@@ -197,34 +196,71 @@ affiche_grid:
 	jne affiche_grid   
 	ret
 
-write_number:
-	ret
-read_number:
+write_number: ;placer les coos à [cos] et le nombre à ajouter a [tmp]
+	call read_number
+	mov rcx, [cos]
+	mov bx, [tmp]
+	mov word ax, [value]
+	add ax, bx
+	
+
+	mov bx, 4
+	div bx
+	
+	push ax
+
+	xor ah, ah
+	shl rax, cl
+
+	or [num3], rax
+
+	pop ax
+	shr ax, 8
+
+	mov bx, 2
+	div bx
+	
+	push ax
+
+	xor ah, ah
+	shl rax, cl
+
+	or [num2], rax
+
+	pop ax
+	shr ax, 8
+	
+	shl rax, cl
+
+	or [num1], rax
+
+	ret	
+read_number: ; On store les coos du nombre à lire dans [cos] la valeur est return dans [value]
 	xor rax, rax
-	mov rbx, [cos] ; on place les coos à eax
-	mov rax, [num1]
+	mov rcx, [cos]
+	mov rax, [num1] ; on place le premier quadra word dans rax
 
-	mov rcx, rbx
+	shr rax, cl ; on le bitdhift des coos
+	and rax, 1 ; on recup seulement le premier nombre
+
+	mov byte [value], al ; on initialise value à ce nombre
+
+	mov rax, [num2] ; on va refaire pareil avec num2 mais en multipliant par 2 à la fin (système binaire)
+
 	shr rax, cl
 	and al, 1
 
-	mov byte [value], al
-
-	mov rax, [num2]
-
-	shr rax, cl
-	and al, 1
-	mov rcx, 2
-	mul cl
+	mov bx, 2
+	mul bx
 	add [value], al
 
-	mov rax, [num3]
+	mov rax, [num3] ; on va refaire pareil avec num2 mais en multipliant par 4 à la fin (système binaire)
 
-	mov rcx, rbx
 	shr rax, cl
 	and al, 1
-	mov rcx, 4
-	mul cl
+	
+	mov cx, 4
+	mul cx
 	add [value], al
 
 	ret
@@ -396,7 +432,6 @@ _start:                ;User prompt
 	mov qword [num1], 0
 	mov qword [num2], 0
 	mov qword [num3], 0
-	mov qword [num4], 0
 
 	; call read_number
 
