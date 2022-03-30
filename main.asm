@@ -30,14 +30,14 @@ section .data          ; Data segment
 	isLose            DQ 0x0
 	isWin             DQ 0x0
 	
+	num1 			  dq 0x0
+	num2 			  dq 0x0
+	num3 			  dq 0x0
 
 section .bss           ; Uninitialized data
     cos resd 1
     x resb 1
     y resb 1
-	num1 resq 1
-	num2 resq 1
-	num3 resq 1
 	tmp resb 1
 	value resb 1
 
@@ -73,6 +73,53 @@ generate_bomb:
 		mov rbx, 64         ; modulo 64 le nombre
 		div rbx
 		mov rax, rdx        ; Met le modulo dans la variable rax
+		call get_x_and_y
+
+		mov [y], rax
+		mov [x], rdx
+
+		dec rdx
+		dec rax
+		add byte [y], 2
+		add byte [x], 2
+
+		mov byte [tmp], 1
+
+		neighbours1:
+
+
+			jmp neighbours2
+
+			inc rax
+			cmp rax, y
+			jne neighbours1
+
+			ret
+		neighbours2:
+
+			call is_cos_inside
+			cmp r11, 255
+			je neighboursInside
+
+			
+			inc rdx
+			cmp rdx, x
+			jne neighbours2
+
+			mov rdx, [x]
+			sub rdx, 3
+			ret
+		neighboursInside:
+			push rax
+			mov bl, 8
+			mul bl
+			add rax, rdx
+			mov [cos], rax
+			call write_number
+			pop rax
+			ret
+		pop rcx       ; On reprend rcx en tant que nb_bombs
+		dec rcx
 
 		xor rdx, rdx        ; Reset rdx et rbx pour la prochaine utilisation
 		xor rbx, rbx
