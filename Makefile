@@ -3,6 +3,8 @@ all: clean asm-compile execute
 
 asm-compile:
 	nasm -felf64 main.asm && ld main.o
+asm-compile2:
+	nasm -felf64 main2.asm && ld main2.o
 
 asm-test:
 	nasm -felf64 test.asm && ld test.o

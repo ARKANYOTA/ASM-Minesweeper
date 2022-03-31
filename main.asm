@@ -193,10 +193,6 @@ affiche_grid:
 
 
 
-	;                     espace            db " "
-	;                     noBombAndFlagMsg  db "~"
-	;                     justbombMsg       db "#"
-	;                     bombAndFlag       db "x"
 	; Si le lsb modulo 2 est 1 ou 0 pour print 1 ou 0
 	mov rax, r8  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
 	shr rax, 1   ; Passe a la bombe suivante
@@ -334,13 +330,13 @@ read_number: ; On store les coos du nombre à lire dans [cos] la valeur est retu
 	ret
 
 user_input:
-    mov eax, 3
-    mov ebx, 2,
+    mov eax, 3     ; Input in cos
+    mov ebx, 2
     mov edx, 4
     mov ecx, cos
     int 80h
 
-    mov rdx, 0
+    mov rdx, 0              ; Prend seulement les 2 primier characteres
     mov bx, 0b100000000
     mov eax, [cos]
     div bx ; division pour la co x
@@ -364,7 +360,8 @@ user_input:
     add al, [x]
     mov [cos], al ; On ajoute la colonne 
 
-    xor al,al ; reset al
+    ; reset variables
+    xor rax,rax
     xor rbx,rbx
     xor rcx,rcx
     
