@@ -57,8 +57,9 @@ section .text          ; Code Segment
 ; r13
 ; r14
 ; r15
+ 
+write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
 
-write_number: ;Input : [cos] [tmp]
 	call read_number
 	mov rcx, [cos]
 	mov bx, [tmp]
@@ -97,33 +98,32 @@ write_number: ;Input : [cos] [tmp]
 	or [num1], rax
 
 	ret	
-read_number: ; Input: [cos], Output : [value]
-	xor rax, rax
-	mov rcx, [cos]
-	mov rax, [num1] ; on place le premier quadra word dans rax
+read_number: 			; Input : [cos], Output : [value], modifications : rax, rbx, rcx
+	mov rcx, [cos]  		; On place les cos a rcx
+	mov rax, [num1] 		; on place le premier quadra word dans rax
 
-	shr rax, cl ; on le bitdhift des coos
-	and rax, 1 ; on recup seulement le premier nombre
+	shr rax, cl 			; on le bitdhift de coo
+	and rax, 1 				; on recup seulement le premier nombre
 
-	mov byte [value], al ; on initialise value à ce nombre
+	mov byte [value], al 	; on initialise value à ce nombre
 
-	mov rax, [num2] ; on va refaire pareil avec num2 mais en multipliant par 2 à la fin (système binaire)
+	mov rax, [num2] 		; on va refaire pareil avec num2
 
-	shr rax, cl
-	and al, 1
+	shr rax, cl				; On bitshift num2 de cos
+	and al, 1				; on recup seulement le premier nombre
 
-	mov bx, 2
+	mov bx, 2				; On multiplie par 2**1
 	mul bx
-	add [value], al
+	add [value], al			; On ajoute a value
 
-	mov rax, [num3] ; on va refaire pareil avec num2 mais en multipliant par 4 à la fin (système binaire)
+	mov rax, [num3] 		; On va refaire pareil avec num3 
 
-	shr rax, cl
-	and al, 1
+	shr rax, cl				; On bitshift num2 de cos
+	and al, 1				; On recup seulement le premier nombre
 	
-	mov cx, 4
-	mul cx
-	add [value], al
+	mov bx, 4				; On multiplie par 2**2
+	mul bx
+	add [value], al 		; On ajoute à la value
 
 	ret
 
@@ -144,7 +144,7 @@ quit_program:
 	int     0x80                  ; Call kernel
 	ret
 
-get_x_y: ; Input [tmpcos], Output : [tmpx] and [tmpy]
+get_x_y: 				; Input : [tmpcos], Output : [tmpx] and [tmpy]
 	push rbx                    ; Je sais pas si elle est utilisé donc je la save
 	push rdx                    ; Je sais pas si elle est utilisé donc je la save
 	xor rdx, rdx
@@ -158,7 +158,7 @@ get_x_y: ; Input [tmpcos], Output : [tmpx] and [tmpy]
 	ret
 	
 
-user_input:   ; Output: [tmpx], [tmpy], [cos]
+user_input:   			; Output: [tmpx], [tmpy], [cos]
 	mov eax, 3                ; Input in cos
 	mov ebx, 2                
 	mov edx, 4
@@ -196,15 +196,16 @@ user_input:   ; Output: [tmpx], [tmpy], [cos]
 	
 	ret
 
-generate_bomb:   ; input [cos]
+generate_bomb:   		; Input [cos]
 	mov r8, [bombs]     ; On met bombs dans r8 que ganera un bit a chaque itération
         mov rcx, [nb_bombs] ; Nombre de bombe dans rcx
 	generate_bombs_loop:
 		;rax = RANDOM       ; Générer un nombre aléatoire dans la variable eax 
 		L: rdrand ax        ; https://rosettacode.org/wiki/Random_number_generator_(device)#X86_Assembly
-		jnc L
-
+		jnc L 				
+		
 		; rax(random) %= 64
+
 		xor rdx, rdx          ; Reset la variable rdx
 		mov rbx, 64           ; Rbx modulo 64
 		div rbx
@@ -269,14 +270,14 @@ generate_bomb:   ; input [cos]
 			sub rdx, 3 ; et on le remet à x-1
 			ret
 		neighboursInside:
-			push rax 		 	; On push l'itérateur du y
-			mov bl, 8   	 	; On place 8 à bl pour multiplier rax par bl après
-			mul bl			 	; On multiplie le y par 8 pour avoir la ligne
-			add rax, rdx	 	; On ajoute x pour avoir la co
-			mov [cos], rax   	; On move tout à cos pour l'input du write number
+			push rax 		 				; On push l'itérateur du y
+			mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
+			mul bl			 				; On multiplie le y par 8 pour avoir la ligne
+			add rax, rdx	 				; On ajoute x pour avoir la co
+			mov [cos], rax   				; On move tout à cos pour l'input du write number
 
-			call write_number	; On ajoute 1 a la valeur de la case avec write_number
-			pop rax				; On recup l'itérateur y
+			call write_number rdx, rax		; On ajoute 1 a la valeur de la case avec write_number
+			pop rax							; On recup l'itérateur y
 
 			ret
 		pop rcx                      ; On reprend rcx en tant que nb_bombs
@@ -320,7 +321,7 @@ print_grid:
 	
 	ret
 
-affiche_grid:   ; A commenter
+affiche_grid:   		; A commenter
 	; Verifie si c'est un modulo 8 pour sauter une ligne
 	xor rdx, rdx    
 	mov rax, rcx
@@ -422,9 +423,9 @@ affiche_grid:   ; A commenter
 	cmp rcx, 0  ; Si on est a la fin on quitte
 	jne affiche_grid   
 	ret
-is_cos_inside: ; input [tmpx] [tmpy], output [r11] + A commenter
-    mov rax, [tmpy] 
-	mov rdx, [tmpx]
+%macro is_cos_inside 2	; input [tmpx] [tmpy], output [r11] + A commenter
+    mov rax, %2
+	mov rdx, %1
     cmp rax,0
     mov r11, 0                       ; La cordonn{es est pas bonne
     jl is_no_inside
@@ -437,11 +438,9 @@ is_cos_inside: ; input [tmpx] [tmpy], output [r11] + A commenter
                     mov r11, 255                ; Boolean de si la cordonnée est bonne
                     ; Is inside
     is_no_inside:
-    ret
-
-
-
-_start:                ;User prompt
+    	ret
+%endmacro
+_start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
 	call generate_bomb  ; Input [cos], ouput [bombs]
 	; mov qword [num1], 0
