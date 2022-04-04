@@ -52,11 +52,81 @@ section .text          ; Code Segment
 ; r8   ; bombs
 ; r9
 ; r10
-; r11
+; r11 ; is_cos_inside_output
 ; r12
 ; r13
 ; r14
 ; r15
+
+write_number: ;Input : [cos] [tmp]
+	call read_number
+	mov rcx, [cos]
+	mov bx, [tmp]
+	mov word ax, [value]
+	add ax, bx
+	
+
+	mov bx, 4
+	div bx
+	
+	push ax
+
+	xor ah, ah
+	shl rax, cl
+
+	or [num3], rax
+
+	pop ax
+	shr ax, 8
+
+	mov bx, 2
+	div bx
+	
+	push ax
+
+	xor ah, ah
+	shl rax, cl
+
+	or [num2], rax
+
+	pop ax
+	shr ax, 8
+	
+	shl rax, cl
+
+	or [num1], rax
+
+	ret	
+read_number: ; Input: [cos], Output : [value]
+	xor rax, rax
+	mov rcx, [cos]
+	mov rax, [num1] ; on place le premier quadra word dans rax
+
+	shr rax, cl ; on le bitdhift des coos
+	and rax, 1 ; on recup seulement le premier nombre
+
+	mov byte [value], al ; on initialise value à ce nombre
+
+	mov rax, [num2] ; on va refaire pareil avec num2 mais en multipliant par 2 à la fin (système binaire)
+
+	shr rax, cl
+	and al, 1
+
+	mov bx, 2
+	mul bx
+	add [value], al
+
+	mov rax, [num3] ; on va refaire pareil avec num2 mais en multipliant par 4 à la fin (système binaire)
+
+	shr rax, cl
+	and al, 1
+	
+	mov cx, 4
+	mul cx
+	add [value], al
+
+	ret
+
 
 quit_program:
 	; Saut de ligne pour éviter le %
@@ -74,7 +144,7 @@ quit_program:
 	int     0x80                  ; Call kernel
 	ret
 
-get_x_y: ; input [tmpcos], output [tmpx] and [tmpy]
+get_x_y: ; Input [tmpcos], Output : [tmpx] and [tmpy]
 	push rbx                    ; Je sais pas si elle est utilisé donc je la save
 	push rdx                    ; Je sais pas si elle est utilisé donc je la save
 	xor rdx, rdx
@@ -88,7 +158,7 @@ get_x_y: ; input [tmpcos], output [tmpx] and [tmpy]
 	ret
 	
 
-user_input:   ; Output: [x], [y], [cos]
+user_input:   ; Output: [tmpx], [tmpy], [cos]
 	mov eax, 3                ; Input in cos
 	mov ebx, 2                
 	mov edx, 4
@@ -167,9 +237,51 @@ generate_bomb:   ; input [cos]
 		mov rcx, [tmpcos]            ; shr ne marche que avec cl(rcx) 
 		shl rbx, cl                  ; masque = (1 << rax(position random de la bombe))
 		or r8, rbx                   ; bombs |= masque
+
+		mov rax, [tmpy] ; On move y a rax qui sera l'itérateur sur le y
+		mov rdx, [tmpx] ; On move x a rdx qui sera l'itérateur sur le x
+
+		dec rdx ; On les decremente car on part de y-1 pour aller a y+2
+		dec rax ; idem avec x
+
+		mov [tmp], 1 ; Utile pour plus tard quand on ajoutera 1 aux causes autour
+
+		jmp neighbours1; On appelle la double boucle
+
+		neighbours1:
+			jmp neighbours2 ; On appelle la boucle intèrieure 
+
+			inc rax ; on incrémente l'itérateur
+			cmp rax, y+2 ; Condition du while rax<y+2
+			jne neighbours1 ; se réappelle si la condition n'est pas respectée
+			ret
+		neighbours2:
+			call is_cos_inside ; vérifie que les coordonées sont à l'intèrieur de la grille
+			cmp r11, 255 ; Si oui :
+			je neighboursInside ; Appeller la fonction pour augmenter le nombre
+
+			
+			inc rdx ; On augmente l'itérateur du x
+			cmp rdx, x ; tant que rdx <= x+2 :
+			jne neighbours2 ; boucler
+
+			mov rdx, [x] ; reset l'itérateur du x
+			sub rdx, 3 ; et on le remet à x-1
+			ret
+		neighboursInside:
+			push rax 		 	; On push l'itérateur du y
+			mov bl, 8   	 	; On place 8 à bl pour multiplier rax par bl après
+			mul bl			 	; On multiplie le y par 8 pour avoir la ligne
+			add rax, rdx	 	; On ajoute x pour avoir la co
+			mov [cos], rax   	; On move tout à cos pour l'input du write number
+
+			call write_number	; On ajoute 1 a la valeur de la case avec write_number
+			pop rax				; On recup l'itérateur y
+
+			ret
 		pop rcx                      ; On reprend rcx en tant que nb_bombs
 		dec rcx                      ; On passe a la prochaine bombe
-
+		
 		cmp rcx, 0      ; Si y a plus de bombes a placer on quitte
 		jne generate_bombs_loop
 	mov [bombs], r8         ; bombs a ete bien générée
@@ -310,6 +422,24 @@ affiche_grid:   ; A commenter
 	cmp rcx, 0  ; Si on est a la fin on quitte
 	jne affiche_grid   
 	ret
+is_cos_inside: ; input [tmpx] [tmpy], output [r11] + A commenter
+    mov rax, [tmpy] 
+	mov rdx, [tmpx]
+    cmp rax,0
+    mov r11, 0                       ; La cordonn{es est pas bonne
+    jl is_no_inside
+        cmp rax,7
+        jg is_no_inside
+            cmp rdx,0
+            jl is_no_inside
+                cmp rdx,7
+                jg is_no_inside
+                    mov r11, 255                ; Boolean de si la cordonnée est bonne
+                    ; Is inside
+    is_no_inside:
+    ret
+
+
 
 _start:                ;User prompt
 	call user_input     ; Input, output [cos], [x], [y]
