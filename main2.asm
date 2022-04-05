@@ -54,12 +54,30 @@ section .text          ; Code Segment
 ; r10
 ; r11 ; is_cos_inside_output
 ; r12
-; r13
-; r14
+; r13 ; is_cos_inside_inputx
+; r14 ; is_cos_inside_inputy
 ; r15
- 
-write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
 
+
+
+is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx 
+    mov rax, r14
+	mov rdx, r13
+    cmp rax,0
+    mov r11, 0                       ; La cordonnée est pas bonne
+    jl is_no_inside
+        cmp rax,7
+        jg is_no_inside
+            cmp rdx,0
+            jl is_no_inside
+                cmp rdx,7
+                jg is_no_inside
+                    mov r11, 255                ; Boolean de si la cordonnée est bonne
+                    ; Is inside
+    is_no_inside:
+    	ret
+write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
+	xor rax, rax
 	call read_number
 	mov rcx, [cos]
 	mov bx, [tmp]
@@ -245,7 +263,7 @@ generate_bomb:   		; Input [cos]
 		dec rdx ; On les decremente car on part de y-1 pour aller a y+2
 		dec rax ; idem avec x
 
-		mov [tmp], 1 ; Utile pour plus tard quand on ajoutera 1 aux causes autour
+		mov byte [tmp], 1 ; Utile pour plus tard quand on ajoutera 1 aux causes autour
 
 		jmp neighbours1; On appelle la double boucle
 
@@ -257,17 +275,24 @@ generate_bomb:   		; Input [cos]
 			jne neighbours1 ; se réappelle si la condition n'est pas respectée
 			ret
 		neighbours2:
-			call is_cos_inside ; vérifie que les coordonées sont à l'intèrieur de la grille
-			cmp r11, 255 ; Si oui :
-			je neighboursInside ; Appeller la fonction pour augmenter le nombre
+			mov r14, rax
+			mov r13, rdx
+			
+			call is_cos_inside 	; vérifie que les coordonées sont à l'intèrieur de la grille
+
+			mov rax, r14
+			mov rdx, r13
+
+			cmp r11, 255 			; Si oui :
+			call neighboursInside 	; Appeller la fonction pour augmenter le nombre
 
 			
-			inc rdx ; On augmente l'itérateur du x
-			cmp rdx, x ; tant que rdx <= x+2 :
-			jne neighbours2 ; boucler
+			inc rdx 				; On augmente l'itérateur du x
+			cmp rdx, x 				; tant que rdx <= x+2 :
+			jne neighbours2 		; boucler
 
-			mov rdx, [x] ; reset l'itérateur du x
-			sub rdx, 3 ; et on le remet à x-1
+			mov rdx, [x] 			; reset l'itérateur du x
+			sub rdx, 3 				; et on le remet à x-1
 			ret
 		neighboursInside:
 			push rax 		 				; On push l'itérateur du y
@@ -276,7 +301,7 @@ generate_bomb:   		; Input [cos]
 			add rax, rdx	 				; On ajoute x pour avoir la co
 			mov [cos], rax   				; On move tout à cos pour l'input du write number
 
-			call write_number rdx, rax		; On ajoute 1 a la valeur de la case avec write_number
+			call write_number				; On ajoute 1 a la valeur de la case avec write_number
 			pop rax							; On recup l'itérateur y
 
 			ret
@@ -423,23 +448,6 @@ affiche_grid:   		; A commenter
 	cmp rcx, 0  ; Si on est a la fin on quitte
 	jne affiche_grid   
 	ret
-%macro is_cos_inside 2	; input [tmpx] [tmpy], output [r11] + A commenter
-    mov rax, %2
-	mov rdx, %1
-    cmp rax,0
-    mov r11, 0                       ; La cordonn{es est pas bonne
-    jl is_no_inside
-        cmp rax,7
-        jg is_no_inside
-            cmp rdx,0
-            jl is_no_inside
-                cmp rdx,7
-                jg is_no_inside
-                    mov r11, 255                ; Boolean de si la cordonnée est bonne
-                    ; Is inside
-    is_no_inside:
-    	ret
-%endmacro
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
 	call generate_bomb  ; Input [cos], ouput [bombs]
