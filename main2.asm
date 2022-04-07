@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 14
+	nb_bombs          DQ 25
 
 	bombs             DQ 0x0;0xa09440c820930000
 	flag              DQ 0x0
@@ -60,19 +60,20 @@ section .text          ; Code Segment
 
 
 
-is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx 
-    mov rax, r14
-	mov rdx, r13
-    cmp rax,0
-    mov r11, 0                       ; La cordonnée est pas bonne
+is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx
+
+    mov rax, r14					; y --> rax
+	mov rdx, r13					; x --> rdx
+    cmp rax,0			
+    mov r11, 0						; Si y < 0 ==> ret
     jl is_no_inside
-        cmp rax,7
+        cmp rax,7					; Si y > 7 ==> ret
         jg is_no_inside
-            cmp rdx,0
+            cmp rdx,0				; Si x < 0 ==> ret
             jl is_no_inside
-                cmp rdx,7
+                cmp rdx,7			; Si x > 7 ==> ret
                 jg is_no_inside
-                    mov r11, 255                ; Boolean de si la cordonnée est bonne
+                    mov r11, 255	; Boolean de si la cordonnée est bonne
                     ; Is inside
     is_no_inside:
     	ret
@@ -86,7 +87,7 @@ write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
 	
 
 	mov bx, 4
-	div bx
+	div bl
 	
 	push ax
 
@@ -99,7 +100,7 @@ write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
 	shr ax, 8
 
 	mov bx, 2
-	div bx
+	div bl
 	
 	push ax
 
