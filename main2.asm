@@ -58,29 +58,9 @@ section .text          ; Code Segment
 ; r14 ; is_cos_inside_inputy
 ; r15
 
-
-
-is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx
-
-    mov rax, r14					; y --> rax
-	mov rdx, r13					; x --> rdx
-    cmp rax,0			
-    mov r11, 0						; Si y < 0 ==> ret
-    jl is_no_inside
-        cmp rax,7					; Si y > 7 ==> ret
-        jg is_no_inside
-            cmp rdx,0				; Si x < 0 ==> ret
-            jl is_no_inside
-                cmp rdx,7			; Si x > 7 ==> ret
-                jg is_no_inside
-                    mov r11, 255	; Boolean de si la cordonnée est bonne
-                    ; Is inside
-    is_no_inside:
-    	ret
-
-%macro add_number 2			; Input : cos : %1  valeur : %2, Modifications : rax, rbx, rcx
+%macro add_number 2			; Input : cos -> %1  valeur -> %2, Modifications : rax, rbx, rcx
 	xor rax, rax
-	call read_number %1
+	read_number %1
 	mov rcx, %1
 	mov bx, %2
 	mov word ax, [value]
@@ -118,7 +98,7 @@ is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rd
 	or [num1], rax
 
 %endmacro
-%macro read_number 1 			; Input : cos : %1 , Output : [value], modifications : rax, rbx, rcx
+%macro read_number 1 			; Input : cos -> %1 , Output : [value], modifications : rax, rbx, rcx
 	mov rcx, %1  			; On place les cos a rcx
 	mov rax, [num1] 		; on place le premier quadra word dans rax
 
@@ -145,6 +125,26 @@ is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rd
 	mul bx
 	add [value], al 		; On ajoute à la value
 %endmacro
+
+
+is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx
+
+    mov rax, r14					; y --> rax
+	mov rdx, r13					; x --> rdx
+    cmp rax,0			
+    mov r11, 0						; Si y < 0 ==> ret
+    jl is_no_inside
+        cmp rax,7					; Si y > 7 ==> ret
+        jg is_no_inside
+            cmp rdx,0				; Si x < 0 ==> ret
+            jl is_no_inside
+                cmp rdx,7			; Si x > 7 ==> ret
+                jg is_no_inside
+                    mov r11, 255	; Boolean de si la cordonnée est bonne
+                    ; Is inside
+    is_no_inside:
+    	ret
+
 quit_program:
 	; Saut de ligne pour éviter le %
 	mov rax, 4
@@ -269,7 +269,7 @@ generate_bomb:   		; Input [cos]
 			jmp neighbours2 ; On appelle la boucle intèrieure 
 
 			inc rax ; on incrémente l'itérateur
-			cmp rax, y+2 ; Condition du while rax<y+2
+			cmp rax, tmpy+2 ; Condition du while rax<y+2
 			jne neighbours1 ; se réappelle si la condition n'est pas respectée
 			ret
 		neighbours2:
@@ -286,20 +286,23 @@ generate_bomb:   		; Input [cos]
 
 			
 			inc rdx 				; On augmente l'itérateur du x
-			cmp rdx, x 				; tant que rdx <= x+2 :
+			cmp rdx, tmpx+2			; tant que rdx <= x+2 :
 			jne neighbours2 		; boucler
 
-			mov rdx, [x] 			; reset l'itérateur du x
+			mov rdx, [tmpx] 			; reset l'itérateur du x
 			sub rdx, 3 				; et on le remet à x-1
 			ret
 		neighboursInside:
+			push rdx						; On pus l'itérateur du x
 			push rax 		 				; On push l'itérateur du y
 			mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
 			mul bl			 				; On multiplie le y par 8 pour avoir la ligne
 			add rax, rdx	 				; On ajoute x pour avoir la co
 
 			add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
+			
 			pop rax							; On recup l'itérateur y
+			pop rdx							; On recup l'itérateur x
 
 			ret
 		pop rcx                      ; On reprend rcx en tant que nb_bombs
@@ -308,6 +311,7 @@ generate_bomb:   		; Input [cos]
 		cmp rcx, 0      ; Si y a plus de bombes a placer on quitte
 		jne generate_bombs_loop
 	mov [bombs], r8         ; bombs a ete bien générée
+
 	; Variable reset
         xor rax, rax
         xor rbx, rbx
