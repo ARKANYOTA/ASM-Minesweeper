@@ -77,11 +77,12 @@ is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rd
                     ; Is inside
     is_no_inside:
     	ret
-write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
+
+%macro add_number 2			; Input : cos : %1  valeur : %2, Modifications : rax, rbx, rcx
 	xor rax, rax
-	call read_number
-	mov rcx, [cos]
-	mov bx, [tmp]
+	call read_number %1
+	mov rcx, %1
+	mov bx, %2
 	mov word ax, [value]
 	add ax, bx
 	
@@ -116,9 +117,9 @@ write_number: 			; Input : [cos] [tmp], Modifications : rax, rbx, rcx
 
 	or [num1], rax
 
-	ret	
-read_number: 			; Input : [cos], Output : [value], modifications : rax, rbx, rcx
-	mov rcx, [cos]  		; On place les cos a rcx
+%endmacro
+%macro read_number 1 			; Input : cos : %1 , Output : [value], modifications : rax, rbx, rcx
+	mov rcx, %1  			; On place les cos a rcx
 	mov rax, [num1] 		; on place le premier quadra word dans rax
 
 	shr rax, cl 			; on le bitdhift de coo
@@ -143,10 +144,7 @@ read_number: 			; Input : [cos], Output : [value], modifications : rax, rbx, rcx
 	mov bx, 4				; On multiplie par 2**2
 	mul bx
 	add [value], al 		; On ajoute à la value
-
-	ret
-
-
+%endmacro
 quit_program:
 	; Saut de ligne pour éviter le %
 	mov rax, 4
@@ -264,7 +262,6 @@ generate_bomb:   		; Input [cos]
 		dec rdx ; On les decremente car on part de y-1 pour aller a y+2
 		dec rax ; idem avec x
 
-		mov byte [tmp], 1 ; Utile pour plus tard quand on ajoutera 1 aux causes autour
 
 		jmp neighbours1; On appelle la double boucle
 
@@ -300,9 +297,8 @@ generate_bomb:   		; Input [cos]
 			mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
 			mul bl			 				; On multiplie le y par 8 pour avoir la ligne
 			add rax, rdx	 				; On ajoute x pour avoir la co
-			mov [cos], rax   				; On move tout à cos pour l'input du write number
 
-			call write_number				; On ajoute 1 a la valeur de la case avec write_number
+			add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
 			pop rax							; On recup l'itérateur y
 
 			ret
