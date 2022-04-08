@@ -7,9 +7,9 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 1
+	nb_bombs          DQ 4
 
-	bombs             DQ 0x0;0xa09440c820930000
+	bombs             DQ 0xa09440c820930000
 	flag              DQ 0x0
 	disco             DQ 0x0
 
@@ -39,10 +39,11 @@ section .data          ; Data segment
 	tmpx                  dq 0x0
 	tmpy                  dq 0x0
 
+	cos                dq 0x0
+	x                  dq 0x0
+	y                  dq 0x0
+
 section .bss           ; Uninitialized data
-	cos resd 1
-	x resb 1
-	y resb 1
 	tmp resb 1
 	value resb 1
 
@@ -440,9 +441,27 @@ affiche_grid:   		; A commenter
 	cmp rcx, 0  ; Si on est a la fin on quitte
 	jne affiche_grid   
 	ret
+
+
+discover:  ; A REFAIRE   ; rcx, = cos  ; rax= y; rdx = x
+	push rax
+	mov rcx, 8
+	mul cl
+	add rax, rdx
+	mov rcx, rax
+	pop rax
+
+	mov r10, [disco]
+	mov rbx, 1     ; Masque
+	; mov rcx, [cos]   ;  a faire avant
+	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
+	or r10, rbx    ; bombs |= masque
+	mov [disco], r10
+	ret
+
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
-	call generate_bomb  ; Input [cos], ouput [bombs]
+	; call generate_bomb  ; Input [cos], ouput [bombs]
 	; mov qword [num1], 0
 	; mov qword [num2], 0
 	; mov qword [num3], 0
@@ -450,32 +469,36 @@ _start:					; User prompt
 	; call discover
 
 while_true:
+
+	print_grid
+
+	; call is_game_finished
+   
 	mov eax, 4
 	mov ebx, 1
 	mov ecx, posMsg
 	mov edx, lenposxMsg
 	int 80h
+	call user_input
 
-    print_grid
+	; xor rax, rax
+	; xor rbx, rbx
+	; xor rcx, rcx
+	; xor rdx, rdx
 
-    ; call is_game_finished
-   
-    ; call user_input
-
-    ; xor rax, rax
-    ; xor rbx, rbx
-    ; xor rcx, rcx
-    ; xor rdx, rdx
-
-    ; mov rcx, [cos]   ; 
-    ; call discover
+	mov rcx, [cos]   ; 
+	call get_x_y
+	mov rax, [tmpx]
+	mov rdx, [tmpy]
+	mov rcx, [tmpcos]
+	; call discover
 
 
-    ; mov r8, [bombs]
-    ; mov r9, [flag]
-    ; mov r10, [disco]
-    
-    jmp while_true
+	; mov r8, [bombs]
+	; mov r9, [flag]
+	; mov r10, [disco]
 
-    
-    call quit_program
+	jmp while_true
+
+
+	call quit_program
