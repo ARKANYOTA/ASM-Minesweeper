@@ -7,9 +7,9 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 4
+	nb_bombs          DQ 1
 
-	bombs             DQ 0xa09440c820930000
+	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
 	disco             DQ 0x0
 
@@ -246,12 +246,9 @@ generate_bomb:   		; Input [cos]
 		jnc L 				
 		
 		; rax(random) %= 64
-
-
-		mov bl, 64           ; Rbx modulo 64
-		div bl
+		and ax, 63
 		
-		mov [tmpcos], ah     ; Met le reste		
+		mov [tmpcos], al     	; Met le reste		
 		
 		
 		; Condition de si la bombe est deja placée
@@ -299,28 +296,29 @@ generate_bomb:   		; Input [cos]
 				mov rdx, r13
 
 				cmp r11, 255 			; Si oui :
-				je neighboursInside 	; Appeller la fonction pour augmenter le nombre
-				neighboursInside:
-					push rdx						; On pus l'itérateur du x
-					push rax 		 				; On pus l'itérateur du y
-					mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
-					mul bl			 				; On multiplie le y par 8 pour avoir la ligne
-					add rax, rdx	 				; On ajoute x pour avoir la co
+				jne neighboursNotInside 	; Appeller la fonction pour augmenter le nombre
 
-					add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
-					
-					pop rax							; On recup l'itérateur y
-					pop rdx							; On recup l'itérateur x
+				push rdx						; On pus l'itérateur du x
+				push rax 		 				; On pus l'itérateur du y
+				mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
+				mul bl			 				; On multiplie le y par 8 pour avoir la ligne
+				add rax, rdx	 				; On ajoute x pour avoir la co
+
+				add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
 				
-				inc rdx 				; On augmente l'itérateur du x
-				cmp rdx, tmpx			; tant que rdx <= x+2 :
-				jl neighbours2 			; boucler
+				pop rax							; On recup l'itérateur y
+				pop rdx							; On recup l'itérateur x
+										
+				neighboursNotInside:
+					inc rdx 				; On augmente l'itérateur du x
+					cmp rdx, [tmpx]			; tant que rdx <= x+2 :
+					jl neighbours2 			; boucler
 
-				mov rdx, [tmpx] 			; reset l'itérateur du x
-				sub rdx, 3 					; et on le remet à x-1
+					mov rdx, [tmpx] 			; reset l'itérateur du x
+					sub rdx, 3 					; et on le remet à x-1
 
 			inc rax				; on incrémente l'itérateur
-			cmp rax, tmpy		; Condition du while rax<y+2
+			cmp rax, [tmpy]		; Condition du while rax<y+2
 			jl neighbours1		; se réappelle si la condition n'est pas respectée	
 		pop rcx                      ; On reprend rcx en tant que nb_bombs
 		dec rcx                      ; On passe a la prochaine bombe
@@ -461,7 +459,7 @@ discover:  ; A REFAIRE   ; rcx, = cos  ; rax= y; rdx = x
 
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
-	; call generate_bomb  ; Input [cos], ouput [bombs]
+	call generate_bomb  ; Input [cos], ouput [bombs]
 	; mov qword [num1], 0
 	; mov qword [num2], 0
 	; mov qword [num3], 0
