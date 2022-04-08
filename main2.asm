@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 1
+	nb_bombs          DQ 3
 
 	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
@@ -162,7 +162,7 @@ is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rd
     jl is_no_inside
         cmp rax,7					; Si y > 7 ==> ret
         jg is_no_inside
-            cmp rdx,0				; Si x < 0 ==> ret
+            cmp rdx,0		 		; Si x < 0 ==> ret
             jl is_no_inside
                 cmp rdx,7			; Si x > 7 ==> ret
                 jg is_no_inside
@@ -384,11 +384,23 @@ affiche_grid:   		; A commenter
 		shr rax, 1   ; Passe a la bombe suivante
 		mov r9, rax  ; Re sauvgarde rax dans r8
 		jc print_no_bomb_and_flag
-			mov rax, 4
-			mov rbx, 1
-			mov rcx, espace
-			mov rdx, 1
-			int 80h
+            read_number rcx
+            mov rax, [value]
+
+            add al, 48
+            mov byte[rsp-1], al
+
+            mov eax,1       ;Write system call number
+            mov edi,1       ;file descriptor (1 = stdout)
+            lea rsi,[rsp-1] ;address of message on the stack
+            mov edx,1       ;length of message
+            syscall
+
+			; mov rax, 4
+			; mov rbx, 1
+			; mov rcx, espace
+			; mov rdx, 1
+			; int 80h
 			jmp end_print
 		print_no_bomb_and_flag:
 			mov rax, 4
@@ -442,12 +454,7 @@ affiche_grid:   		; A commenter
 
 
 discover:  ; A REFAIRE   ; rcx, = cos  ; rax= y; rdx = x
-	push rax
-	mov rcx, 8
-	mul cl
-	add rax, rdx
-	mov rcx, rax
-	pop rax
+    mov rcx, [tmpcos]
 
 	mov r10, [disco]
 	mov rbx, 1     ; Masque
@@ -484,12 +491,7 @@ while_true:
 	; xor rcx, rcx
 	; xor rdx, rdx
 
-	mov rcx, [cos]   ; 
-	call get_x_y
-	mov rax, [tmpx]
-	mov rdx, [tmpy]
-	mov rcx, [tmpcos]
-	; call discover
+	call discover
 
 
 	; mov r8, [bombs]
