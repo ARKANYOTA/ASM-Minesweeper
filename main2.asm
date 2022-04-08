@@ -246,14 +246,11 @@ generate_bomb:   		; Input [cos]
 		
 		; rax(random) %= 64
 
-		xor rdx, rdx          ; Reset la variable rdx
-		mov rbx, 64           ; Rbx modulo 64
-		div rbx
-		mov rax, rdx          ; Met le modulo dans la variable eax (Position dans la grille)
+
+		mov bl, 64           ; Rbx modulo 64
+		div bl
 		
-		mov [tmpcos], rax     ; Met rax dans tmpcos
-		call get_x_y
-		
+		mov [tmpcos], ah     ; Met le reste		
 		
 		
 		; Condition de si la bombe est deja placée
@@ -278,6 +275,8 @@ generate_bomb:   		; Input [cos]
 		mov rcx, [tmpcos]           ; shr ne marche que avec cl(rcx) 
 		shl rbx, cl                 ; masque = (1 << rax(position random de la bombe))
 		or r8, rbx                  ; bombs |= masque
+
+		call get_x_y
 
 		mov rax, [tmpy] 			; On move y a rax qui sera l'itérateur sur le y
 		mov rdx, [tmpx] 			; On move x a rdx qui sera l'itérateur sur le x
