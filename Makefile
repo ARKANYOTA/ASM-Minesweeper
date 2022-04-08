@@ -1,4 +1,4 @@
-all: clean asm-compile execute
+all: clean asm-compile2 execute
 
 
 asm-compile:
