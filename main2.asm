@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 25
+	nb_bombs          DQ 1
 
 	bombs             DQ 0x0;0xa09440c820930000
 	flag              DQ 0x0
@@ -58,7 +58,7 @@ section .text          ; Code Segment
 ; r14 ; is_cos_inside_inputy
 ; r15
 
-%macro add_number 2			; Input : cos -> %1  valeur -> %2, Modifications : rax, rbx, rcx
+%macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
 	xor rax, rax
 	read_number %1
 	mov rcx, %1
@@ -98,7 +98,7 @@ section .text          ; Code Segment
 	or [num1], rax
 
 %endmacro
-%macro read_number 1 			; Input : cos -> %1 , Output : [value], modifications : rax, rbx, rcx
+%macro read_number 1 			; Input : cos | Output : [value] | Modifications : rax, rbx, rcx
 	mov rcx, %1  			; On place les cos a rcx
 	mov rax, [num1] 		; on place le premier quadra word dans rax
 
@@ -125,7 +125,32 @@ section .text          ; Code Segment
 	mul bx
 	add [value], al 		; On ajoute à la value
 %endmacro
-
+%macro print_grid 0
+	mov rax, 4
+	mov rbx, 1
+	mov rcx, whatCollIs
+	mov rdx, lenwhatCollIs
+	int 80h
+	
+	mov rax, 0
+	mov rbx, 0
+	mov rdx, 0
+	mov rcx, 64
+	mov r8, [bombs]
+	mov r9, [flag]
+	mov r10, [disco]
+	mov r15, 48     ; Line
+	call affiche_grid
+	
+	mov rax, 4
+	mov rbx, 1
+	mov rcx, sautdelMsg
+	mov rdx, 1
+	int 80h
+	
+	mov r15, 0	
+%endmacro
+	
 
 is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx
 
@@ -163,14 +188,11 @@ quit_program:
 
 get_x_y: 				; Input : [tmpcos], Output : [tmpx] and [tmpy]
 	push rbx                    ; Je sais pas si elle est utilisé donc je la save
-	push rdx                    ; Je sais pas si elle est utilisé donc je la save
-	xor rdx, rdx
 	mov rax, [tmpcos]           ; Rax a l'intut tmpcos
-	mov rbx, 8                  
-	div bx                      ; Rax = Rax // 8, Rdx = Rax % 8
-	mov [tmpx], rdx             ; Met rax, rdx dans les variables output
-	mov [tmpy], rax 
-	pop rdx                     ; Recuperer les variable size
+	mov bl, 8                  
+	div bl                     ; Rax = Rax // 8, Rdx = Rax % 8
+	mov [tmpx], ah             ; Met rax, rdx dans les variables output
+	mov [tmpy], al 
 	pop rbx                     ; Recuperer les variable size
 	ret
 	
@@ -201,7 +223,7 @@ user_input:   			; Output: [tmpx], [tmpy], [cos]
 	
 	mov bx, 8
 	mov al, [y] ; On multiplie y par 8 pour avoir la ligne 
-	mul bx
+	mul bl
 	
 	add al, [x]
 	mov [cos], al ; On ajoute la colonne 
@@ -214,8 +236,9 @@ user_input:   			; Output: [tmpx], [tmpy], [cos]
 	ret
 
 generate_bomb:   		; Input [cos]
+
 	mov r8, [bombs]     ; On met bombs dans r8 que ganera un bit a chaque itération
-        mov rcx, [nb_bombs] ; Nombre de bombe dans rcx
+    mov rcx, [nb_bombs] ; Nombre de bombe dans rcx
 	generate_bombs_loop:
 		;rax = RANDOM       ; Générer un nombre aléatoire dans la variable eax 
 		L: rdrand ax        ; https://rosettacode.org/wiki/Random_number_generator_(device)#X86_Assembly
@@ -250,61 +273,55 @@ generate_bomb:   		; Input [cos]
 		je generate_bombs_loop      ; On genere une autre bombe
 
 		
-		push rcx                     ; Sauvgarde rcx(Compteur nb_bombes)    
-		mov rbx, 1                   ; Masque
-		mov rcx, [tmpcos]            ; shr ne marche que avec cl(rcx) 
-		shl rbx, cl                  ; masque = (1 << rax(position random de la bombe))
-		or r8, rbx                   ; bombs |= masque
+		push rcx                    ; Sauvgarde rcx(Compteur nb_bombes)    
+		mov rbx, 1                  ; Masque
+		mov rcx, [tmpcos]           ; shr ne marche que avec cl(rcx) 
+		shl rbx, cl                 ; masque = (1 << rax(position random de la bombe))
+		or r8, rbx                  ; bombs |= masque
 
-		mov rax, [tmpy] ; On move y a rax qui sera l'itérateur sur le y
-		mov rdx, [tmpx] ; On move x a rdx qui sera l'itérateur sur le x
+		mov rax, [tmpy] 			; On move y a rax qui sera l'itérateur sur le y
+		mov rdx, [tmpx] 			; On move x a rdx qui sera l'itérateur sur le x
+
+		add byte [tmpy], 2
+		add byte [tmpx], 2
 
 		dec rdx ; On les decremente car on part de y-1 pour aller a y+2
 		dec rax ; idem avec x
 
-
-		jmp neighbours1; On appelle la double boucle
-
 		neighbours1:
-			jmp neighbours2 ; On appelle la boucle intèrieure 
+			neighbours2:
+				mov r14, rax
+				mov r13, rdx
+				
+				call is_cos_inside 	; vérifie que les coordonées sont à l'intèrieur de la grille
 
-			inc rax ; on incrémente l'itérateur
-			cmp rax, tmpy+2 ; Condition du while rax<y+2
-			jne neighbours1 ; se réappelle si la condition n'est pas respectée
-			ret
-		neighbours2:
-			mov r14, rax
-			mov r13, rdx
-			
-			call is_cos_inside 	; vérifie que les coordonées sont à l'intèrieur de la grille
+				mov rax, r14
+				mov rdx, r13
 
-			mov rax, r14
-			mov rdx, r13
+				cmp r11, 255 			; Si oui :
+				je neighboursInside 	; Appeller la fonction pour augmenter le nombre
+				neighboursInside:
+					push rdx						; On pus l'itérateur du x
+					push rax 		 				; On pus l'itérateur du y
+					mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
+					mul bl			 				; On multiplie le y par 8 pour avoir la ligne
+					add rax, rdx	 				; On ajoute x pour avoir la co
 
-			cmp r11, 255 			; Si oui :
-			call neighboursInside 	; Appeller la fonction pour augmenter le nombre
+					add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
+					
+					pop rax							; On recup l'itérateur y
+					pop rdx							; On recup l'itérateur x
+				
+				inc rdx 				; On augmente l'itérateur du x
+				cmp rdx, tmpx			; tant que rdx <= x+2 :
+				jl neighbours2 			; boucler
 
-			
-			inc rdx 				; On augmente l'itérateur du x
-			cmp rdx, tmpx+2			; tant que rdx <= x+2 :
-			jne neighbours2 		; boucler
+				mov rdx, [tmpx] 			; reset l'itérateur du x
+				sub rdx, 3 					; et on le remet à x-1
 
-			mov rdx, [tmpx] 			; reset l'itérateur du x
-			sub rdx, 3 				; et on le remet à x-1
-			ret
-		neighboursInside:
-			push rdx						; On pus l'itérateur du x
-			push rax 		 				; On push l'itérateur du y
-			mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
-			mul bl			 				; On multiplie le y par 8 pour avoir la ligne
-			add rax, rdx	 				; On ajoute x pour avoir la co
-
-			add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
-			
-			pop rax							; On recup l'itérateur y
-			pop rdx							; On recup l'itérateur x
-
-			ret
+			inc rax				; on incrémente l'itérateur
+			cmp rax, tmpy		; Condition du while rax<y+2
+			jl neighbours1		; se réappelle si la condition n'est pas respectée	
 		pop rcx                      ; On reprend rcx en tant que nb_bombs
 		dec rcx                      ; On passe a la prochaine bombe
 		
@@ -320,32 +337,7 @@ generate_bomb:   		; Input [cos]
 	ret
 
 
-print_grid:
-	mov rax, 4
-	mov rbx, 1
-	mov rcx, whatCollIs
-	mov rdx, lenwhatCollIs
-	int 80h
-	
-	mov rax, 0
-	mov rbx, 0
-	mov rdx, 0
-	mov rcx, 64
-	mov r8, [bombs]
-	mov r9, [flag]
-	mov r10, [disco]
-	mov r15, 48     ; Line
-	call affiche_grid
-	
-	mov rax, 4
-	mov rbx, 1
-	mov rcx, sautdelMsg
-	mov rdx, 1
-	int 80h
-	
-	mov r15, 0
-	
-	ret
+
 
 affiche_grid:   		; A commenter
 	; Verifie si c'est un modulo 8 pour sauter une ligne
@@ -459,7 +451,13 @@ _start:					; User prompt
 	; call discover
 
 while_true:
-    call print_grid
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, posMsg
+	mov edx, lenposxMsg
+	int 80h
+
+    print_grid
 
     ; call is_game_finished
    
