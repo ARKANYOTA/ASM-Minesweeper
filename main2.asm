@@ -112,7 +112,12 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
 	xor rax, rax
 	read_number %1
-	mov rcx, %1
+
+	mov rdx, %1
+	mov rcx, 63
+
+	sub rcx, rdx
+
 	mov bx, %2
 	mov word ax, [value]
 	add ax, bx
@@ -126,7 +131,10 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	xor ah, ah
 	shl rax, cl
 
-	or [num3], rax
+
+	mov rdx, [num3]
+	or rdx, rax
+	mov [num3], rdx
 
 	pop ax
 	shr ax, 8
@@ -139,14 +147,18 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	xor ah, ah
 	shl rax, cl
 
-	or [num2], rax
+	mov rdx, [num2]
+	or rdx, rax
+	mov [num2], rdx
 
 	pop ax
 	shr ax, 8
 	
 	shl rax, cl
 
-	or [num1], rax
+	mov rdx, [num1]
+	or rdx, rax
+	mov [num1], rdx
 
 %endmacro
 %macro read_number 1 			; Input : cos | Output : [value] | Modifications : rax, rbx, rcx
@@ -525,6 +537,24 @@ _start:					; User prompt
 while_true:
 
 	print_grid
+
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, [num1]
+	mov edx, 8
+	int 80h
+
+	mov eax, 4
+	mov ebx,1
+	mov ecx, [num2]
+	mov edx, 8
+	int 80h
+
+	mov eax, 4
+	mov ebx,1
+	mov ecx, [num3]
+	mov edx, 8
+	int 80h
 
 	; call is_game_finished
    
