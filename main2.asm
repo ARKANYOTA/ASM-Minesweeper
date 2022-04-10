@@ -7,9 +7,9 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 4
+	nb_bombs          DQ 3
 
-	bombs             DQ 0xa09440c820930000
+	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
 	disco             DQ 0x0
 
@@ -58,6 +58,56 @@ section .text          ; Code Segment
 ; r13 ; is_cos_inside_inputx
 ; r14 ; is_cos_inside_inputy
 ; r15
+
+%macro discover 1 			; Input : cos (Dans un cl ou un truc de 8 bit) | Output: Write [disco] | Modifications : rax, rbx, rcx
+	mov cl, %1  			; On place les cos a rcx
+	mov rax, [disco] 		; on place le premier quadra word dans rax
+
+ 	mov rbx, 1              ; Masque
+ 	shl rbx, cl             ; masque = (1 << rax(position random de la bombe))
+ 	or rax, rbx             ; bombs |= masque
+
+    mov [disco], rax        ; Output dans disco
+%endmacro
+
+; Fact (n) = n * fact (n-1) for n > 0
+flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
+    ; 1. Set Q to the empty queue or stack.
+    xor rdx, rdx
+    mov dl, 65
+    push rdx
+    ; 2. Add node to the end of Q.
+    mov dl, [cos]
+    push rdx
+
+    ; 3. While Q is not empty:
+    while_Q_not_empy:
+        pop rdx
+        cmp dl, 65
+        je end_flood_fill
+    ; 4.   Set n equal to the first element of Q.
+        ; Is dl
+    ; 5.   Remove first element from Q.
+        ; Is always dl
+    ; 6.   If n is Inside:
+        ; TODO: If indide
+        ; j(if not inside) while_Q_not_empty
+    ;        Set the n
+            discover dl
+    ;        Add the node to the west of n to the end of Q.
+            ; Faire les verifications
+            dec dl
+            push rdx
+            inc dl
+    ;        Add the node to the east of n to the end of Q.
+    ;        Add the node to the north of n to the end of Q.
+    ;        Add the node to the south of n to the end of Q.
+    ; 7. Continue looping until Q is exhausted.
+    end_flood_fill:
+    ; 8. Return.
+
+    ret
+
 
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
 	xor rax, rax
@@ -162,7 +212,7 @@ is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rd
     jl is_no_inside
         cmp rax,7					; Si y > 7 ==> ret
         jg is_no_inside
-            cmp rdx,0				; Si x < 0 ==> ret
+            cmp rdx,0		 		; Si x < 0 ==> ret
             jl is_no_inside
                 cmp rdx,7			; Si x > 7 ==> ret
                 jg is_no_inside
@@ -246,12 +296,9 @@ generate_bomb:   		; Input [cos]
 		jnc L 				
 		
 		; rax(random) %= 64
-
-
-		mov bl, 64           ; Rbx modulo 64
-		div bl
+		and ax, 63
 		
-		mov [tmpcos], ah     ; Met le reste		
+		mov [tmpcos], al     	; Met le reste		
 		
 		
 		; Condition de si la bombe est deja placée
@@ -299,28 +346,29 @@ generate_bomb:   		; Input [cos]
 				mov rdx, r13
 
 				cmp r11, 255 			; Si oui :
-				je neighboursInside 	; Appeller la fonction pour augmenter le nombre
-				neighboursInside:
-					push rdx						; On pus l'itérateur du x
-					push rax 		 				; On pus l'itérateur du y
-					mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
-					mul bl			 				; On multiplie le y par 8 pour avoir la ligne
-					add rax, rdx	 				; On ajoute x pour avoir la co
+				jne neighboursNotInside 	; Appeller la fonction pour augmenter le nombre
 
-					add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
-					
-					pop rax							; On recup l'itérateur y
-					pop rdx							; On recup l'itérateur x
+				push rdx						; On pus l'itérateur du x
+				push rax 		 				; On pus l'itérateur du y
+				mov bl, 8   	 				; On place 8 à bl pour multiplier rax par bl après
+				mul bl			 				; On multiplie le y par 8 pour avoir la ligne
+				add rax, rdx	 				; On ajoute x pour avoir la co
+
+				add_number rax, 1				; On ajoute 1 a la valeur de la case avec write_number
 				
-				inc rdx 				; On augmente l'itérateur du x
-				cmp rdx, tmpx			; tant que rdx <= x+2 :
-				jl neighbours2 			; boucler
+				pop rax							; On recup l'itérateur y
+				pop rdx							; On recup l'itérateur x
+										
+				neighboursNotInside:
+					inc rdx 				; On augmente l'itérateur du x
+					cmp rdx, [tmpx]			; tant que rdx <= x+2 :
+					jl neighbours2 			; boucler
 
-				mov rdx, [tmpx] 			; reset l'itérateur du x
-				sub rdx, 3 					; et on le remet à x-1
+					mov rdx, [tmpx] 			; reset l'itérateur du x
+					sub rdx, 3 					; et on le remet à x-1
 
 			inc rax				; on incrémente l'itérateur
-			cmp rax, tmpy		; Condition du while rax<y+2
+			cmp rax, [tmpy]		; Condition du while rax<y+2
 			jl neighbours1		; se réappelle si la condition n'est pas respectée	
 		pop rcx                      ; On reprend rcx en tant que nb_bombs
 		dec rcx                      ; On passe a la prochaine bombe
@@ -384,17 +432,27 @@ affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as li
 	mov r8, rax                 ; Re sauvgarde rax dans r8
 	push rcx                    ; Sauvgarde le rcx pour pas le perdre
 	jc print_bomb
-	print_no_bomb:              ; Si y a pas de bombre
+	print_no_bomb:              ; Si y a pas de bombe
 		mov rax, r9         ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
 		shr rax, 1          ; Passe a la bombe suivante
 		mov r9, rax         ; Re sauvgarde rax dans r8
-		jc print_no_bomb_and_flag   ; Si y a pas de bombe et un pas de flag 
-			mov rax, 4          ; Print espace
-			mov rbx, 1
-			mov rcx, espace
-			mov rdx, 1
-			int 80h
+		jc print_no_bomb_and_flag   ; Pas bombe et pas de drapeau
+                                            ; Print le nombre de bombe de nombre autour
+
+			read_number rcx     ; Lit le nombre de bombe autour
+			mov rax, [value]    ; Le met dans rax
+
+			add al, 48           ; Ajoute 48 pour avoir l'assci du nombre bombe autour
+			mov byte[rsp-1], al  ; Ajoute au stack
+
+			mov eax,1            ; Write system call number
+			mov edi,1            ; file descriptor (1 = stdout)
+			lea rsi,[rsp-1]      ; address of message on the stack
+			mov edx,1            ; length of message
+			syscall              ; Syscall, mais pas int 80h car sa marche pas
+
 			jmp end_print
+
 		print_no_bomb_and_flag:     ; Si y a pas de bombe  et un flag
 			mov rax, 4          ; on print "~"
 			mov rbx, 1
@@ -448,23 +506,19 @@ affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as li
 	ret
 
 
-discover: ;Input [tmpcos];    ; rcx, = cos  ; rax= y; rdx = x
-	mov rcx, [tmpcos]
-
-	mov r10, [disco]
-	mov rbx, 1     ; Masque
-	; mov rcx, [cos]   ;  a faire avant
-	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
-	or r10, rbx    ; bombs |= masque
-	mov [disco], r10
-	ret
-
+; discover: ;Input [tmpcos];    ; rcx, = cos  ; rax= y; rdx = x
+; 	mov rcx, [tmpcos]
+; 
+; 	mov r10, [disco]
+; 	mov rbx, 1     ; Masque
+; 	; mov rcx, [cos]   ;  a faire avant
+; 	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
+; 	or r10, rbx    ; bombs |= masque
+; 	mov [disco], r10
+; 	ret
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
-	; call generate_bomb  ; Input [cos], ouput [bombs]
-	; mov qword [num1], 0
-	; mov qword [num2], 0
-	; mov qword [num3], 0
+	call generate_bomb  ; Input [cos], ouput [bombs]
 	; call get_x_and_y
 	; call discover
 
@@ -488,7 +542,10 @@ while_true:
 
 	mov rcx, [cos]   ; 
 	call get_x_y
-	call discover
+
+
+        mov cl, [cos]
+	discover cl
 
 
 	; mov r8, [bombs]
