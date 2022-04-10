@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 3
+	nb_bombs          DQ 5
 
 	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
@@ -110,12 +110,12 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 
 
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
-	xor rax, rax
+	push %1
 	read_number %1
 
-	mov rdx, %1
+	pop rdx
 	mov rcx, 63
-
+	xor rax, rax
 	sub rcx, rdx
 
 	mov bx, %2
@@ -538,23 +538,11 @@ while_true:
 
 	print_grid
 
-	mov eax, 4
-	mov ebx, 1
-	mov ecx, [num1]
-	mov edx, 8
-	int 80h
+	mov r9, [num1]
 
-	mov eax, 4
-	mov ebx,1
-	mov ecx, [num2]
-	mov edx, 8
-	int 80h
+	mov r10, [num2]
 
-	mov eax, 4
-	mov ebx,1
-	mov ecx, [num3]
-	mov edx, 8
-	int 80h
+	mov r12, [num3]
 
 	; call is_game_finished
    
