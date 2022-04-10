@@ -59,6 +59,17 @@ section .text          ; Code Segment
 ; r14 ; is_cos_inside_inputy
 ; r15
 
+%macro discover 1 			; Input : cos (Dans un cl ou un truc de 8 bit) | Output: Write [disco] | Modifications : rax, rbx, rcx
+	mov cl, %1  			; On place les cos a rcx
+	mov rax, [disco] 		; on place le premier quadra word dans rax
+
+ 	mov rbx, 1              ; Masque
+ 	shl rbx, cl             ; masque = (1 << rax(position random de la bombe))
+ 	or rax, rbx             ; bombs |= masque
+
+    mov [disco], rax        ; Output dans disco
+%endmacro
+
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
 	xor rax, rax
 	read_number %1
@@ -453,17 +464,6 @@ affiche_grid:   		; A commenter
 	ret
 
 
-discover:  ; A REFAIRE   ; rcx, = cos  ; rax= y; rdx = x
-    mov rcx, [tmpcos]
-
-	mov r10, [disco]
-	mov rbx, 1     ; Masque
-	; mov rcx, [cos]   ;  a faire avant
-	shl rbx, cl     ; masque = (1 << rax(position random de la bombe))
-	or r10, rbx    ; bombs |= masque
-	mov [disco], r10
-	ret
-
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
 	call generate_bomb  ; Input [cos], ouput [bombs]
@@ -491,7 +491,8 @@ while_true:
 	; xor rcx, rcx
 	; xor rdx, rdx
 
-	call discover
+    mov cl, [cos]
+	discover cl
 
 
 	; mov r8, [bombs]
