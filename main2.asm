@@ -467,9 +467,6 @@ affiche_grid:   		; A commenter
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
 	call generate_bomb  ; Input [cos], ouput [bombs]
-	; mov qword [num1], 0
-	; mov qword [num2], 0
-	; mov qword [num3], 0
 	; call get_x_and_y
 	; call discover
 
