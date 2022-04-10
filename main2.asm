@@ -127,23 +127,23 @@ section .text          ; Code Segment
 	add [value], al 		; On ajoute à la value
 %endmacro
 %macro print_grid 0
-	mov rax, 4
+	mov rax, 4                         ; Affiche "  0 1 2 3 4 5 6 7\n"
 	mov rbx, 1
 	mov rcx, whatCollIs
 	mov rdx, lenwhatCollIs
 	int 80h
 	
-	mov rax, 0
+	mov rax, 0                         ; Definit toute les variables dont a besoin pour affiche grid
 	mov rbx, 0
 	mov rdx, 0
 	mov rcx, 64
 	mov r8, [bombs]
 	mov r9, [flag]
 	mov r10, [disco]
-	mov r15, 48     ; Line
-	call affiche_grid
+	mov r15, 48                         ; Le numero de la line, on commance par 48 car c'est ord("0") pour pouvoir le print
+	call affiche_grid                   ; Affiche toutes les lignes 1 par 1
 	
-	mov rax, 4
+	mov rax, 4                          ; Affiche "\n"
 	mov rbx, 1
 	mov rcx, sautdelMsg
 	mov rdx, 1
@@ -339,99 +339,104 @@ generate_bomb:   		; Input [cos]
 
 
 
-affiche_grid:   		; A commenter
-	; Verifie si c'est un modulo 8 pour sauter une ligne
-	xor rdx, rdx    
+affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as ligne 
+				; Output None | Modification r[abcd]x
+	
+	xor rdx, rdx            ; Verifie si c'est un modulo 8 pour sauter une ligne
 	mov rax, rcx
 	mov rbx, 8
 	div rbx
-	push rcx
-	cmp rdx, 0
-	jne pass_saut_de_ligne
-		mov rax, 4
+	push rcx                ; Sauvgarde rcx, je sais pas si c'est utile
+
+	cmp rdx, 0              ; Si c'est modulo 8 on saute une ligne, car c'est le premier char de la ligne
+	jne pass_saut_de_ligne  ; Sinon passe
+		mov rax, 4                ; Saute une ligne
 		mov rbx, 1
 		mov rcx, sautdelMsg
 		mov rdx, 1
 		int 80h
 
-		; Print The current ligne
-		mov byte[rsp-1], r15b
-		mov eax,1       ;Write system call number
-		mov edi,1       ;file descriptor (1 = stdout)
-		lea rsi,[rsp-1] ;address of message on the stack
-		mov edx,1       ;length of message
-		syscall
+		
+		mov byte[rsp-1], r15b     ; Print The current ligne
+		mov eax,1                     ; Write system call number
+		mov edi,1                     ; file descriptor (1 = stdout)
+		lea rsi,[rsp-1]               ; address of message on the stack
+		mov edx,1                     ; length of message
+		syscall                   ; Call system, pas int 80h car sa marche pas
 
-		; Print un espace après le nombre
-		mov rax, 4
+		
+		mov rax, 4                ; Print un espace après le nombre
 		mov rbx, 1
 		mov rcx,espace 
 		mov rdx, 1
 		int 80h
 
-		inc r15     ; Ajoute 1 au nombre de lignes 
+		inc r15                   ; Ajoute 1 au nombre de lignes 
 	pass_saut_de_ligne:
 	pop rcx
 
 
 
-	; Si le lsb modulo 2 est 1 ou 0 pour print 1 ou 0
-	mov rax, r8  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
-	shr rax, 1   ; Passe a la bombe suivante
-	mov r8, rax  ; Re sauvgarde rax dans r8
-	push rcx     ; Sauvgarde le rcx pour pas le perdre
+	; Affiche le premier caractere 
+	                            ; Si le lsb modulo 2 est 1 ou 0 pour print 1 ou 0
+	mov rax, r8                 ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
+	shr rax, 1                  ; Passe a la bombe suivante
+	mov r8, rax                 ; Re sauvgarde rax dans r8
+	push rcx                    ; Sauvgarde le rcx pour pas le perdre
 	jc print_bomb
-	print_no_bomb:     ; Func Name... 
-		mov rax, r9  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
-		shr rax, 1   ; Passe a la bombe suivante
-		mov r9, rax  ; Re sauvgarde rax dans r8
-		jc print_no_bomb_and_flag
-			mov rax, 4
+	print_no_bomb:              ; Si y a pas de bombre
+		mov rax, r9         ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
+		shr rax, 1          ; Passe a la bombe suivante
+		mov r9, rax         ; Re sauvgarde rax dans r8
+		jc print_no_bomb_and_flag   ; Si y a pas de bombe et un pas de flag 
+			mov rax, 4          ; Print espace
 			mov rbx, 1
 			mov rcx, espace
 			mov rdx, 1
 			int 80h
 			jmp end_print
-		print_no_bomb_and_flag:
-			mov rax, 4
+		print_no_bomb_and_flag:     ; Si y a pas de bombe  et un flag
+			mov rax, 4          ; on print "~"
 			mov rbx, 1
 			mov rcx, noBombAndFlagMsg 
 			mov rdx, 1
 			int 80h
 			jmp end_print
-	print_bomb:
+	print_bomb:                
 		mov rax, r9  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
 		shr rax, 1   ; Passe a la bombe suivante
 		mov r9, rax  ; Re sauvgarde rax dans r8
-		jc print_bomb_and_flag
+		jc print_bomb_and_flag       ; Bombe et pas de flag
 			mov rax, 4
 			mov rbx, 1
-			mov rcx, justbombMsg
+			mov rcx, justbombMsg ; Print "#"
 			mov rdx, 1
 			int 80h
 			jmp end_print
-		print_bomb_and_flag:
+		print_bomb_and_flag:         ; Bombe and flag
 			mov rax, 4
 			mov rbx, 1
-			mov rcx, bombAndFlagMsg
+			mov rcx, bombAndFlagMsg ; Print "x"
 			mov rdx, 1
 			int 80h
 			jmp end_print
 	end_print:
+
+	; Print le 2 eme caractere
 	mov rax, r10  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
 	shr rax, 1   ; Passe a la bombe suivante
 	mov r10, rax  ; Re sauvgarde rax dans r8
-	jc print_is_disco
+	jc print_is_disco                  ; Si c'est pas decouvert
 		mov rax, 4
 		mov rbx, 1
-		mov rcx, pointMsg 
+		mov rcx, pointMsg          ; affiche "."
 		mov rdx, 1
 		int 80h
 		jmp end_print_disco
-	print_is_disco:
+	print_is_disco:                    ; Si c'est découvert
 		mov rax, 4
 		mov rbx, 1
-		mov rcx, isDiscoveredMsg
+		mov rcx, isDiscoveredMsg   ; affiche "-"
 		mov rdx, 1
 		int 80h
 	end_print_disco:
@@ -443,13 +448,8 @@ affiche_grid:   		; A commenter
 	ret
 
 
-discover:  ; A REFAIRE   ; rcx, = cos  ; rax= y; rdx = x
-	push rax
-	mov rcx, 8
-	mul cl
-	add rax, rdx
-	mov rcx, rax
-	pop rax
+discover: ;Input [tmpcos];    ; rcx, = cos  ; rax= y; rdx = x
+	mov rcx, [tmpcos]
 
 	mov r10, [disco]
 	mov rbx, 1     ; Masque
@@ -488,10 +488,7 @@ while_true:
 
 	mov rcx, [cos]   ; 
 	call get_x_y
-	mov rax, [tmpx]
-	mov rdx, [tmpy]
-	mov rcx, [tmpcos]
-	; call discover
+	call discover
 
 
 	; mov r8, [bombs]

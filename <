@@ -7,9 +7,9 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 1
+	nb_bombs          DQ 4
 
-	bombs             DQ 0x0;0xa09440c820930000
+	bombs             DQ 0xa09440c820930000
 	flag              DQ 0x0
 	disco             DQ 0x0
 
@@ -38,6 +38,7 @@ section .data          ; Data segment
 	tmpcos                dq 0x0
 	tmpx                  dq 0x0
 	tmpy                  dq 0x0
+
 	cos                dq 0x0
 	x                  dq 0x0
 	y                  dq 0x0
@@ -126,23 +127,23 @@ section .text          ; Code Segment
 	add [value], al 		; On ajoute à la value
 %endmacro
 %macro print_grid 0
-	mov rax, 4
+	mov rax, 4                         ; Affiche "  0 1 2 3 4 5 6 7\n"
 	mov rbx, 1
 	mov rcx, whatCollIs
 	mov rdx, lenwhatCollIs
 	int 80h
 	
-	mov rax, 0
+	mov rax, 0                         ; Definit toute les variables dont a besoin pour affiche grid
 	mov rbx, 0
 	mov rdx, 0
 	mov rcx, 64
 	mov r8, [bombs]
 	mov r9, [flag]
 	mov r10, [disco]
-	mov r15, 48     ; Line
-	call affiche_grid
+	mov r15, 48                         ; Le numero de la line, on commance par 48 car c'est ord("0") pour pouvoir le print
+	call affiche_grid                   ; Affiche toutes les lignes 1 par 1
 	
-	mov rax, 4
+	mov rax, 4                          ; Affiche "\n"
 	mov rbx, 1
 	mov rcx, sautdelMsg
 	mov rdx, 1
@@ -246,14 +247,11 @@ generate_bomb:   		; Input [cos]
 		
 		; rax(random) %= 64
 
-		xor rdx, rdx          ; Reset la variable rdx
-		mov rbx, 64           ; Rbx modulo 64
-		div rbx
-		mov rax, rdx          ; Met le modulo dans la variable eax (Position dans la grille)
+
+		mov bl, 64           ; Rbx modulo 64
+		div bl
 		
-		mov [tmpcos], rax     ; Met rax dans tmpcos
-		call get_x_y
-		
+		mov [tmpcos], ah     ; Met le reste		
 		
 		
 		; Condition de si la bombe est deja placée
@@ -278,6 +276,8 @@ generate_bomb:   		; Input [cos]
 		mov rcx, [tmpcos]           ; shr ne marche que avec cl(rcx) 
 		shl rbx, cl                 ; masque = (1 << rax(position random de la bombe))
 		or r8, rbx                  ; bombs |= masque
+
+		call get_x_y
 
 		mov rax, [tmpy] 			; On move y a rax qui sera l'itérateur sur le y
 		mov rdx, [tmpx] 			; On move x a rdx qui sera l'itérateur sur le x
@@ -339,28 +339,30 @@ generate_bomb:   		; Input [cos]
 
 
 
-affiche_grid:   		; A commenter
-	; Verifie si c'est un modulo 8 pour sauter une ligne
-	xor rdx, rdx    
+affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as ligne 
+				; Output None | Modification r[abcd]x
+	
+	xor rdx, rdx            ; Verifie si c'est un modulo 8 pour sauter une ligne
 	mov rax, rcx
 	mov rbx, 8
 	div rbx
 	push rcx
-	cmp rdx, 0
-	jne pass_saut_de_ligne
-		mov rax, 4
+
+	cmp rdx, 0              ; Si c'est modulo 8 on saute une ligne
+	jne pass_saut_de_ligne  ; Sinon passe
+		mov rax, 4                ; Saute une ligne
 		mov rbx, 1
 		mov rcx, sautdelMsg
 		mov rdx, 1
 		int 80h
 
-		; Print The current ligne
-		mov byte[rsp-1], r15b
-		mov eax,1       ;Write system call number
-		mov edi,1       ;file descriptor (1 = stdout)
-		lea rsi,[rsp-1] ;address of message on the stack
-		mov edx,1       ;length of message
-		syscall
+		
+		mov byte[rsp-1], r15b     ; Print The current ligne
+		mov eax,1                     ; Write system call number
+		mov edi,1                     ; file descriptor (1 = stdout)
+		lea rsi,[rsp-1]               ; address of message on the stack
+		mov edx,1                     ; length of message
+		syscall                   ; Call system 
 
 		; Print un espace après le nombre
 		mov rax, 4
@@ -442,8 +444,9 @@ affiche_grid:   		; A commenter
 	jne affiche_grid   
 	ret
 
+
 discover: ;Input [tmpcos];    ; rcx, = cos  ; rax= y; rdx = x
-	mov rcx, [cos]
+	mov rcx, [tmpcos]
 
 	mov r10, [disco]
 	mov rbx, 1     ; Masque
@@ -455,31 +458,41 @@ discover: ;Input [tmpcos];    ; rcx, = cos  ; rax= y; rdx = x
 
 _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
-	mov r8, [cos]
-	mov r9, [x]
-	mov r10, [y]
-	push rax
-	mov rax, [cos]
-	mov [tmpcos], rax
-	pop rax
-	call get_x_y 		; Input : [tmpcos], Output : [tmpx] and [tmpy]
-	mov r11, [tmpcos]
-	mov r12, [tmpx]
-	mov r13, [tmpy]
-	mov r14, [disco]
-	mov rcx, [cos]
-	call discover
-	mov r14, [disco]
-	call quit_program
+	; call generate_bomb  ; Input [cos], ouput [bombs]
+	; mov qword [num1], 0
+	; mov qword [num2], 0
+	; mov qword [num3], 0
+	; call get_x_and_y
+	; call discover
 
-; while_true:
-; 	mov eax, 4
-; 	mov ebx, 1
-; 	mov ecx, posMsg
-; 	mov edx, lenposxMsg
-; 	int 80h
-; 
-;     print_grid
-;     jmp while_true
-; 
-;     call quit_program
+while_true:
+
+	print_grid
+
+	; call is_game_finished
+   
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, posMsg
+	mov edx, lenposxMsg
+	int 80h
+	call user_input
+
+	; xor rax, rax
+	; xor rbx, rbx
+	; xor rcx, rcx
+	; xor rdx, rdx
+
+	mov rcx, [cos]   ; 
+	call get_x_y
+	call discover
+
+
+	; mov r8, [bombs]
+	; mov r9, [flag]
+	; mov r10, [disco]
+
+	jmp while_true
+
+
+	call quit_program
