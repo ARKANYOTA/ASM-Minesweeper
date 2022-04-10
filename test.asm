@@ -77,6 +77,8 @@ section .text          ; Code Segment
  	or rax, rbx             ; bombs |= masque
 
     mov [disco], rax        ; Output dans disco
+    ; if cos%8 == 1
+
 %endmacro
 
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx

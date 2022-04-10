@@ -70,6 +70,45 @@ section .text          ; Code Segment
     mov [disco], rax        ; Output dans disco
 %endmacro
 
+; Fact (n) = n * fact (n-1) for n > 0
+flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
+    ; 1. Set Q to the empty queue or stack.
+    xor rdx, rdx
+    mov dl, 65
+    push rdx
+    ; 2. Add node to the end of Q.
+    mov dl, [cos]
+    push rdx
+
+    ; 3. While Q is not empty:
+    while_Q_not_empy:
+        pop rdx
+        cmp dl, 65
+        je end_flood_fill
+    ; 4.   Set n equal to the first element of Q.
+        ; Is dl
+    ; 5.   Remove first element from Q.
+        ; Is always dl
+    ; 6.   If n is Inside:
+        ; TODO: If indide
+        ; j(if not inside) while_Q_not_empty
+    ;        Set the n
+            discover dl
+    ;        Add the node to the west of n to the end of Q.
+            ; Faire les verifications
+            dec dl
+            push rdx
+            inc dl
+    ;        Add the node to the east of n to the end of Q.
+    ;        Add the node to the north of n to the end of Q.
+    ;        Add the node to the south of n to the end of Q.
+    ; 7. Continue looping until Q is exhausted.
+    end_flood_fill:
+    ; 8. Return.
+
+    ret
+
+
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
 	xor rax, rax
 	read_number %1
