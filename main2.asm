@@ -406,6 +406,7 @@ affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as li
 	mov rax, rcx
 	mov rbx, 8
 	div rbx
+	dec rcx     ; Passe a l'itteration suivante
 	push rcx                ; Sauvgarde rcx, je sais pas si c'est utile
 
 	cmp rdx, 0              ; Si c'est modulo 8 on saute une ligne, car c'est le premier char de la ligne
@@ -512,7 +513,6 @@ affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as li
 	end_print_disco:
 	pop rcx     ; Re recupere le rcx en tant que compteur 
 
-	dec rcx     ; Passe a l'itteration suivante
 	cmp rcx, 0  ; Si on est a la fin on quitte
 	jne affiche_grid   
 	ret
