@@ -55,10 +55,10 @@ section .text          ; Code Segment
 ; r9
 ; r10
 ; r11 ; is_cos_inside_output
-; r12
+; r12 ; isLose
 ; r13 ; is_cos_inside_inputx
 ; r14 ; is_cos_inside_inputy
-; r15 ; is win ==> win = 0 sinon c pas win
+; r15 ; 
 
 %macro discover 1 			; Input : cos (Dans un cl ou un truc de 8 bit) | Output: Write [disco] | Modifications : rax, rbx, rcx
 	mov cl, %1  			; On place les cos a rcx
@@ -69,6 +69,14 @@ section .text          ; Code Segment
  	or rax, rbx             ; bombs |= masque
 
     mov [disco], rax        ; Output dans disco
+%endmacro
+
+%macro isLose 0
+	mov rax, [disco]
+	mov r8, [bombs]
+
+	and rax, r8
+	mov [isLose], rax
 %endmacro
 
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
@@ -193,9 +201,10 @@ section .text          ; Code Segment
 
 %macro victory_condition 0
 	mov r8, [bombs]
-	mov r15, disco
-	or r15, r8
-	not r15
+	mov rax, disco
+	or rax, r8
+	not rax
+	mov [isWin], rax
 %endmacro
 	
 %macro is_bomb 1                       ; Input : cos | output 1 or 0 in rax | modification rax, rcx
@@ -636,6 +645,8 @@ while_true:
 	int 80h
 	call user_input
 
+
+
 	; xor rax, rax
 	; xor rbx, rbx
 	; xor rcx, rcx
@@ -648,13 +659,17 @@ while_true:
 	mov dl, [cos]
 	discover dl
 
+	isLose
+	cmp qword [isLose], 0
+	jg lose
+
 
 	; mov r8, [bombs]
 	; mov r9, [flag]
 	; mov r10, [disco]
 	victory_condition
-	cmp r15, 0
-	je gameEnd
+	cmp qword [isWin], 0
+	je win
 
 
 
@@ -676,5 +691,6 @@ win:
 	int 80h
 	
 	
-gameEnd:
+gameEnd: 
+	print_grid
 	call quit_program
