@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 4
+	nb_bombs          DQ 10
 
 	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
@@ -57,7 +57,7 @@ section .text          ; Code Segment
 ; r12
 ; r13 ; is_cos_inside_inputx
 ; r14 ; is_cos_inside_inputy
-; r15
+; r15 ; is win ==> win = 0 sinon c pas win
 
 %macro discover 1 			; Input : cos (Dans un cl ou un truc de 8 bit) | Output: Write [disco] | Modifications : rax, rbx, rcx
 	mov cl, %1  			; On place les cos a rcx
@@ -227,6 +227,13 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 
 
 	or rdx, rax
+%endmacro
+
+%macro victory_condition 0
+	mov r8, [bombs]
+	mov r15, disco
+	or r15, r8
+	not r15
 %endmacro
 	
 
@@ -553,12 +560,6 @@ while_true:
 
 	print_grid
 
-	mov r9, [num1]
-
-	mov r10, [num2]
-
-	mov r12, [num3]
-
 	; call is_game_finished
    
 	mov eax, 4
@@ -584,8 +585,29 @@ while_true:
 	; mov r8, [bombs]
 	; mov r9, [flag]
 	; mov r10, [disco]
+	victory_condition
+	cmp r15, 0
+	je gameEnd
+
+
 
 	jmp while_true
 
+lose:
+	mov eax,4
+	mov ebx,1
+	mov ecx, youLoseMessage
+	mov edx, lenyouLoseMessage
+	int 80h
 
+	jmp gameEnd
+win:
+	mov eax,4
+	mov ebx,1
+	mov ecx, youWinMessage
+	mov edx, lenyouWinMessage
+	int 80h
+	
+	
+gameEnd:
 	call quit_program
