@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 10
+	nb_bombs          DQ 4
 
 	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
@@ -218,6 +218,10 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	shl rbx, cl
 	not rbx
 	and rdx, rbx
+
+	mov rbx, 2
+	div bl
+	shr ax, 8
 
 	shl rax, cl    ; code copié depuis https://www.geeksforgeeks.org/modify-bit-given-position/ (il est 2h soyez indulgent)
 
