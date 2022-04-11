@@ -71,7 +71,7 @@ section .text          ; Code Segment
     mov [disco], rax        ; Output dans disco
 %endmacro
 
-%macro isLose 0
+%macro isLose 0              ; disco & bombs > 0 alors isLose
 	mov rax, [disco]
 	mov r8, [bombs]
 
@@ -199,7 +199,7 @@ section .text          ; Code Segment
 	or rdx, rax
 %endmacro
 
-%macro victory_condition 0
+%macro victory_condition 0     ; ~(disco | bombs) == 0 alors isWin
 	mov r8, [bombs]
 	mov rax, [disco]
 	or rax, r8
