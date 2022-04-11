@@ -15,19 +15,20 @@
 Placez-vous dans un dossier vide et copiez le repo :
 
 ```
->> git clone https://github.com/ARKANYOTA/ASM-Minesweeper.git
+git clone https://github.com/ARKANYOTA/ASM-Minesweeper.git
 ```
 
 Effectuez ensuite la commande suivante en ayant bien vérifié avoir les prérequis nécessaires pour faire tourner le programme :
 ```
->> make
+make
 ```
 
 On obtient normalement cette sortie et un fichier a.out apparait :
 
 ```
-<< rm -rf *.out *.o main.i main.s peda-session-a.out.txt
-nasm -felf64 main2.asm && ld main2.o
+>> Nettoyage des anciens fichiers
+>> nasm -felf64 main2.asm && ld main2.o
+>> Fichier compilé et prêt à l'utilisation
 ```
 
 Il suffit juste d'éxécuter ce fichier dans la console de commande :
