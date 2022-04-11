@@ -7,7 +7,7 @@ section .data          ; Data segment
 	youLoseMessage    db 10,' You Lose, Ressaye!'
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 5
+	nb_bombs          DQ 10
 
 	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
@@ -110,14 +110,18 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 
 
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
-	push %1
-	read_number %1
-
-	pop rdx
+	mov rdx, %1
 	mov rcx, 63
-	xor rax, rax
+	
 	sub rcx, rdx
+	push rcx
 
+	read_number rcx
+
+	pop rcx
+	
+
+	xor rax, rax
 	mov bx, %2
 	mov word ax, [value]
 	add ax, bx
@@ -129,11 +133,8 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	push ax
 
 	xor ah, ah
-	shl rax, cl
 
-
-	mov rdx, [num3]
-	or rdx, rax
+	gen_new_number rax, [num3], cl
 	mov [num3], rdx
 
 	pop ax
@@ -145,19 +146,14 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	push ax
 
 	xor ah, ah
-	shl rax, cl
 
-	mov rdx, [num2]
-	or rdx, rax
+	gen_new_number rax, [num2], cl
 	mov [num2], rdx
 
 	pop ax
 	shr ax, 8
 	
-	shl rax, cl
-
-	mov rdx, [num1]
-	or rdx, rax
+	gen_new_number rax, [num1], cl
 	mov [num1], rdx
 
 %endmacro
@@ -212,6 +208,21 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	int 80h
 	
 	mov r15, 0	
+%endmacro
+%macro gen_new_number 3			;Input : value, num, cos | Output : rdx
+	mov cl, %3
+	mov rdx, %2
+	mov rax, %1
+	mov rbx, 1
+
+	shl rbx, cl
+	not rbx
+	and rdx, rbx
+
+	shl rax, cl    ; code copié depuis https://www.geeksforgeeks.org/modify-bit-given-position/ (il est 2h soyez indulgent)
+
+
+	or rdx, rax
 %endmacro
 	
 

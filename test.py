@@ -17,6 +17,34 @@ for k in range(0,8) :
             s += int(l[i][k*8+j])*(2**i)
         print(s, end=" ")
 
+print("")
+
+
+for k in range(0,8) :
+    print("")
+    for j in range(0,8) :
+        s = int(l[0][k*8+j])
+        print(s, end=" ")
+
+
+print("")
+
+
+for k in range(0,8) :
+    print("")
+    for j in range(0,8) :
+        s = int(l[1][k*8+j])
+        print(s, end=" ")
+
+print("")
+
+
+for k in range(0,8) :
+    print("")
+    for j in range(0,8) :
+        s = int(l[2][k*8+j])
+        print(s, end=" ")
+
 
 
 
