@@ -21,6 +21,7 @@ section .data          ; Data segment
 
 	espace            db " "
 	pointMsg          db "."
+	exclmMsg          db "!"
 	noBombAndFlagMsg  db "~"
 	justbombMsg       db "#"
 	bombAndFlagMsg    db "x"
@@ -69,45 +70,6 @@ section .text          ; Code Segment
 
     mov [disco], rax        ; Output dans disco
 %endmacro
-
-; Fact (n) = n * fact (n-1) for n > 0
-flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
-    ; 1. Set Q to the empty queue or stack.
-    xor rdx, rdx
-    mov dl, 65
-    push rdx
-    ; 2. Add node to the end of Q.
-    mov dl, [cos]
-    push rdx
-
-    ; 3. While Q is not empty:
-    while_Q_not_empy:
-        pop rdx
-        cmp dl, 65
-        je end_flood_fill
-    ; 4.   Set n equal to the first element of Q.
-        ; Is dl
-    ; 5.   Remove first element from Q.
-        ; Is always dl
-    ; 6.   If n is Inside:
-        ; TODO: If indide
-        ; j(if not inside) while_Q_not_empty
-    ;        Set the n
-            discover dl
-    ;        Add the node to the west of n to the end of Q.
-            ; Faire les verifications
-            dec dl
-            push rdx
-            inc dl
-    ;        Add the node to the east of n to the end of Q.
-    ;        Add the node to the north of n to the end of Q.
-    ;        Add the node to the south of n to the end of Q.
-    ; 7. Continue looping until Q is exhausted.
-    end_flood_fill:
-    ; 8. Return.
-
-    ret
-
 
 %macro add_number 2			; Input : cos,valeur | Modifications : rax, rbx, rcx
 	mov rdx, %1
@@ -236,6 +198,117 @@ flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx), rdx
 	not r15
 %endmacro
 	
+%macro is_bomb 1                       ; Input : cos | output 1 or 0 in rax | modification rax, rcx
+	mov rax, [bombs]
+	mov cl, %1
+	shr rax, cl
+	and rax, 1
+%endmacro
+
+
+; Fact (n) = n * fact (n-1) for n > 0
+flood_fill:       ; Input [cos] | Modif : discover(rax,rbx, rcx)/is_bomb(rax,rcx), rdx
+    ; 1. Set Q to the empty queue or stack.
+    xor rdx, rdx
+    mov dl, 65
+    push rdx
+    ; 2. Add node to the end of Q.
+    mov dl, [cos]
+    push rdx
+
+    ; 3. While Q is not empty:
+    while_q_not_empty:
+        pop rdx
+        cmp dl, 65
+        je end_flood_fill
+    ; 4.   Set n equal to the first element of Q. ; Is dl ; 5.   Remove first element from Q. ; Is again dl
+
+    ; 6.   If n is Inside:
+        ; TODO: If indide
+	; Possiblemnt verif si le nb de bombre autour est egal a 0, sinon partir sur while q not empty
+	push rdx
+	read_number rdx
+	pop rdx
+	mov al, [value]
+	cmp al, 0
+    jne while_q_not_empty
+
+	discover dl
+
+	cmp dl, 0                   ; Verifie si la position est strictement inferieur a 0
+    jl while_q_not_empty
+	cmp dl, 63                   ; Verifie si la position est strictement supperieur a 63
+    jg while_q_not_empty
+	; Verifie si c'est une bombe
+	is_bomb dl
+	cmp rax, 1                     ; Si la pos est une bombe
+		
+	
+
+	; Verifie si la case est deja découverte:
+	mov rax, [disco]
+	mov cl, dl
+	shr rax, cl
+	and rax, 1
+	cmp rax, 1
+        je while_q_not_empty
+		 discover dl                          ;        Set the n
+
+    		; Verifie le left
+			mov al, dl
+			cmp al, 8
+			; return cos >= 8
+			jl next_neightbour1
+				dec dl                  ; On push dl-1  (cos a gauche)
+				push rdx
+				inc dl
+		next_neightbour1:
+		; Verifie le up
+			mov al, dl
+
+			xor ah, ah ; Recupere que al
+			mov bl, 8 
+			div bl     ; Divise par 8, reste dans ah
+			
+			cmp ah, 0  ; Si le reste n'est pas egal a 0 on return 1
+			; return cos%8 != 0
+			je next_neightbour2
+				sub dl, 8                 ; On push dl-8  (cos au dessus)
+				push rdx
+				add dl, 8
+		next_neightbour2:
+    		; Verifie le down 
+			mov al, dl
+			cmp al, 55
+			; return cos <= 55
+			jg next_neightbour3
+				add dl, 8
+				push rdx
+				sub dl, 8
+		next_neightbour3:
+		; Verifie le up
+			mov al, dl
+
+			xor ah, ah ; Recupere que al
+			mov bl, 7 
+			div bl     ; Divise par 8, reste dans ah
+			
+			cmp ah, 0  ; Si le reste n'est pas egal a 0 on return 1
+			; return cos%7 != 0
+			je next_neightbour4
+				inc dl
+				push rdx
+				dec dl
+		next_neightbour4:
+
+    	; 7. Continue looping until Q is exhausted.
+	jmp while_q_not_empty
+    end_flood_fill:
+    ; 8. Return.
+
+    ret
+
+
 
 is_cos_inside: 			; Input : x[r13] y[r14], Output [r11], Modifications : rax, rdx
 
@@ -420,7 +493,6 @@ generate_bomb:   		; Input [cos]
 
 
 
-
 affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as ligne 
 				; Output None | Modification r[abcd]x
 	
@@ -456,24 +528,48 @@ affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as li
 
 		inc r15                   ; Ajoute 1 au nombre de lignes 
 	pass_saut_de_ligne:
+
 	pop rcx
+	push rcx
 
 
+	mov rax, r9         ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
+	shr rax, 1          ; Passe a la bombe suivante
+	mov r9, rax         ; Re sauvgarde rax dans r8
 
 	; Affiche le premier caractere 
-	                            ; Si le lsb modulo 2 est 1 ou 0 pour print 1 ou 0
-	mov rax, r8                 ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
-	shr rax, 1                  ; Passe a la bombe suivante
-	mov r8, rax                 ; Re sauvgarde rax dans r8
-	push rcx                    ; Sauvgarde le rcx pour pas le perdre
-	jc print_bomb
-	print_no_bomb:              ; Si y a pas de bombe
-		mov rax, r9         ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
-		shr rax, 1          ; Passe a la bombe suivante
-		mov r9, rax         ; Re sauvgarde rax dans r8
-		jc print_no_bomb_and_flag   ; Pas bombe et pas de drapeau
-                                            ; Print le nombre de bombe de nombre autour
+	mov rax, r10  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
+	shr rax, 1   ; Passe a la bombe suivante
+	mov r10, rax  ; Re sauvgarde rax dans r8
+	jc print_is_disco                  ; Si c'est pas decouvert
 
+		mov rax, r8                 ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
+		shr rax, 1                  ; Passe a la bombe suivante
+		mov r8, rax                 ; Re sauvgarde rax dans r8
+		jc print_bomb_di
+		print_no_bomb_di:              ; Si y a pas de bombe
+			mov rax, 4
+			mov rbx, 1
+			mov rcx, pointMsg          ; affiche "."
+			mov rdx, 1
+			int 80h
+			jmp end_print_disco
+
+		print_bomb_di:                 ; Pour debug
+			mov rax, 4
+			mov rbx, 1
+			mov rcx, exclmMsg          ; affiche "!"
+			mov rdx, 1
+			int 80h
+			jmp end_print_disco
+	print_is_disco:                    ; Si c'est découvert
+					    ; Si le lsb modulo 2 est 1 ou 0 pour print 1 ou 0
+		mov rax, r8                 ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
+		shr rax, 1                  ; Passe a la bombe suivante
+		mov r8, rax                 ; Re sauvgarde rax dans r8
+		jc print_bomb
+		print_no_bomb:              ; Si y a pas de bombe
+						    ; Print le nombre de bombe de nombre autour
 			read_number rcx     ; Lit le nombre de bombe autour
 			mov rax, [value]    ; Le met dans rax
 
@@ -488,56 +584,27 @@ affiche_grid:   		; Input r8 as [bombs], r9 as [flag], r10 as [disco], r15 as li
 
 			jmp end_print
 
-		print_no_bomb_and_flag:     ; Si y a pas de bombe  et un flag
-			mov rax, 4          ; on print "~"
-			mov rbx, 1
-			mov rcx, noBombAndFlagMsg 
-			mov rdx, 1
-			int 80h
-			jmp end_print
-	print_bomb:                
-		mov rax, r9  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
-		shr rax, 1   ; Passe a la bombe suivante
-		mov r9, rax  ; Re sauvgarde rax dans r8
-		jc print_bomb_and_flag       ; Bombe et pas de flag
-			mov rax, 4
-			mov rbx, 1
-			mov rcx, justbombMsg ; Print "#"
-			mov rdx, 1
-			int 80h
-			jmp end_print
-		print_bomb_and_flag:         ; Bombe and flag
+		print_bomb:                
 			mov rax, 4
 			mov rbx, 1
 			mov rcx, bombAndFlagMsg ; Print "x"
 			mov rdx, 1
 			int 80h
 			jmp end_print
-	end_print:
-
-	; Print le 2 eme caractere
-	mov rax, r10  ; Met r8(bombs avec le lsb etant la position acctuelle) dans rax
-	shr rax, 1   ; Passe a la bombe suivante
-	mov r10, rax  ; Re sauvgarde rax dans r8
-	jc print_is_disco                  ; Si c'est pas decouvert
-		mov rax, 4
-		mov rbx, 1
-		mov rcx, pointMsg          ; affiche "."
-		mov rdx, 1
-		int 80h
-		jmp end_print_disco
-	print_is_disco:                    ; Si c'est découvert
-		mov rax, 4
-		mov rbx, 1
-		mov rcx, isDiscoveredMsg   ; affiche "-"
-		mov rdx, 1
-		int 80h
+		end_print:
 	end_print_disco:
-	pop rcx     ; Re recupere le rcx en tant que compteur 
 
+	mov rax, 4
+	mov rbx, 1
+	mov rcx, espace     ; affiche "!"
+	mov rdx, 1
+	int 80h
+
+	pop rcx     ; Re recupere le rcx en tant que compteur 
 	cmp rcx, 0  ; Si on est a la fin on quitte
 	jne affiche_grid   
 	ret
+
 
 
 ; discover: ;Input [tmpcos];    ; rcx, = cos  ; rax= y; rdx = x
@@ -577,9 +644,9 @@ while_true:
 	mov rcx, [cos]   ; 
 	call get_x_y
 
-
-        mov cl, [cos]
-	discover cl
+	call flood_fill
+	mov dl, [cos]
+	discover dl
 
 
 	; mov r8, [bombs]
