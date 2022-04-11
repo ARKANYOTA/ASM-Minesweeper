@@ -630,7 +630,8 @@ _start:					; User prompt
 	call user_input     ; Input, output [cos], [x], [y]
 	call generate_bomb  ; Input [cos], ouput [bombs]
 	; call get_x_and_y
-	; call discover
+	mov dl, [cos]
+	discover dl
 
 while_true:
 
