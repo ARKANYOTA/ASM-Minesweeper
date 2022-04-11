@@ -2,12 +2,12 @@ section .data          ; Data segment
 	posMsg            db 'Position x et y sans separation: '
 	lenposxMsg           equ $-posMsg
 
-	youWinMessage     db 10,' You Win, Bravo!'
+	youWinMessage     db 10,' You Win, Bravo!', 10       ; 10 c'est le saut de ligne
 	lenyouWinMessage     equ $-youWinMessage
-	youLoseMessage    db 10,' You Lose, Ressaye!'
+	youLoseMessage    db 10,' You Lose, Ressaye!', 10
 	lenyouLoseMessage    equ $-youLoseMessage
 
-	nb_bombs          DQ 10
+	nb_bombs          DQ 8
 
 	bombs             DQ 0x0 ;0xa09440c820930000
 	flag              DQ 0x0
@@ -21,7 +21,7 @@ section .data          ; Data segment
 
 	espace            db " "
 	pointMsg          db "."
-	exclmMsg          db "!"
+	exclmMsg          db ".*"  ; Mettre a ! pour voir les bombes
 	noBombAndFlagMsg  db "~"
 	justbombMsg       db "#"
 	bombAndFlagMsg    db "x"
@@ -201,7 +201,7 @@ section .text          ; Code Segment
 
 %macro victory_condition 0
 	mov r8, [bombs]
-	mov rax, disco
+	mov rax, [disco]
 	or rax, r8
 	not rax
 	mov [isWin], rax
