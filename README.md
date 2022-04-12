@@ -2,13 +2,8 @@
 ### An assembly minesweeper that is fully functional (i lied)
 
 
-<img src="https://img.shields.io/github/license/arkanyota/ASM-Minesweeper" alt="license" />
-<img src="https://img.shields.io/github/languages/count/arkanyota/asm-minesweeper" alt="lang-count" />
-<img src="https://img.shields.io/github/languages/top/arkanyota/asm-minesweeper" alt="lang-top" />
-<img src="https://img.shields.io/github/languages/code-size/arkanyota/asm-minesweeper" alt="size-code" />
-<img src="https://img.shields.io/github/downloads/arkanyota/asm-minesweeper/total" alt="download" />
-<img src="https://img.shields.io/github/issues/arkanyota/asm-minesweeper" alt="issues" />
-<img src="https://img.shields.io/github/last-commit/arkanyota/asm-minesweeper" alt="last-commit" />
+<img src="https://img.shields.io/github/license/arkanyota/ASM-Minesweeper" alt="license" />   <img src="https://img.shields.io/github/languages/count/arkanyota/asm-minesweeper" alt="lang-count" />   <img src="https://img.shields.io/github/languages/top/arkanyota/asm-minesweeper" alt="lang-top" />   <img src="https://img.shields.io/github/languages/code-size/arkanyota/asm-minesweeper" alt="size-code" />   <img src="https://img.shields.io/github/downloads/arkanyota/asm-minesweeper/total" alt="download" />
+<img src="https://img.shields.io/github/issues/arkanyota/asm-minesweeper" alt="issues" />   <img src="https://img.shields.io/github/last-commit/arkanyota/asm-minesweeper" alt="last-commit" />
 
 <!--https://shields.io/category/issue-tracking-->
 
