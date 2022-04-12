@@ -1,6 +1,8 @@
 ## ASM-Minesweeper
 ### An assembly minesweeper that is fully functional (i lied)
-#
+
+
+<img src="https://img.shields.io/github/license/arkanyota/ASM-Minesweeper" alt="license" />
 
 ### Prérequis :
 
