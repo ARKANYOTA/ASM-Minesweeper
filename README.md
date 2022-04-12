@@ -29,13 +29,13 @@ On obtient normalement cette sortie et un fichier a.out apparait :
 
 ```
 >> Nettoyage des anciens fichiers
->> nasm -felf64 main2.asm && ld main2.o
+>> nasm -felf64 asm-minesweeper.asm && ld asm-minesweeper.o -o asm-minesweeper
 >> Fichier compilé et prêt à l'utilisation
 ```
 
 Il suffit juste d'éxécuter ce fichier dans la console de commande :
 
 ```
-./a.out
+make execute  # ou ./asm-minesweeper
 ```
 

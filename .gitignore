@@ -1,6 +1,7 @@
 # All outputs
 *.o
 *.out
+ams-minesweeper
 
 # gcc -save-temps
 main.s
