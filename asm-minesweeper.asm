@@ -2,9 +2,9 @@ section .data          ; Data segment
 	posMsg            db 'Position x et y sans separation: '
 	lenposxMsg           equ $-posMsg
 
-	youWinMessage     db 10,' You Win, Bravo!', 10       ; 10 c'est le saut de ligne
+	youWinMessage     db 10,'Victoire, Bien Joué !', 10       ; 10 c'est le saut de ligne
 	lenyouWinMessage     equ $-youWinMessage
-	youLoseMessage    db 10,' You Lose, Ressaye!', 10
+	youLoseMessage    db 10,'Défaite, Dommage !', 10
 	lenyouLoseMessage    equ $-youLoseMessage
 
 	nb_bombs          DQ 8
