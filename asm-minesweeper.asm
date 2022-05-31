@@ -1,10 +1,10 @@
 section .data          ; Data segment
-	posMsg            db 'Position x et y sans separation: '
+	posMsg            db `\e[37mPosition x et y sans separation: \e[0m`
 	lenposxMsg           equ $-posMsg
 
-	youWinMessage     db 10,'Victoire, Bien Joué !', 10       ; 10 c'est le saut de ligne
+	youWinMessage     db 10,`\e[32mVictoire, Bien Joué !\e[0m`, 10       ; 10 c'est le saut de ligne
 	lenyouWinMessage     equ $-youWinMessage
-	youLoseMessage    db 10,'Défaite, Dommage !', 10
+	youLoseMessage    db 10,`\e[31mDéfaite, Dommage !\e[0m`, 10
 	lenyouLoseMessage    equ $-youLoseMessage
 
 	nb_bombs          DQ 8
